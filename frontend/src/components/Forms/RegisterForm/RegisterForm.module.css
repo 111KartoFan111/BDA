@@ -1,0 +1,192 @@
+.registerForm {
+  width: 100%;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.formHeader {
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.formTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.formSubtitle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.nameFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.passwordStrength {
+  margin-top: calc(-1 * var(--spacing-sm));
+}
+
+.strengthBar {
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-xs);
+}
+
+.strengthFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: all var(--transition-fast);
+}
+
+.strengthFill.weak {
+  width: 25%;
+  background: var(--error-color);
+}
+
+.strengthFill.fair {
+  width: 50%;
+  background: var(--warning-color);
+}
+
+.strengthFill.good {
+  width: 75%;
+  background: #22c55e;
+}
+
+.strengthFill.strong {
+  width: 100%;
+  background: var(--success-color);
+}
+
+.strengthText {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.termsSection {
+  margin-top: var(--spacing-sm);
+}
+
+.termsLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.checkbox {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--primary-color);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.termsLabel a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.termsLabel a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+.termsError {
+  color: var(--error-color);
+  font-size: 0.75rem;
+  margin-top: var(--spacing-xs);
+}
+
+.formActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.formFooter {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.switchLink {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.switchLink:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .nameFields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .formTitle {
+    font-size: 1.25rem;
+  }
+  
+  .termsLabel {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .formTitle {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .formSubtitle {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .strengthBar {
+  background: #374151;
+}
+
+[data-theme="dark"] .strengthText {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .termsLabel {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .termsError {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .formFooter {
+  color: #d1d5db;
+}

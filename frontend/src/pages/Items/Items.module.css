@@ -1,0 +1,281 @@
+.itemsPage {
+  padding: var(--spacing-lg) 0;
+}
+
+.header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.headerText {
+  text-align: center;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.filtersCard {
+  margin-bottom: var(--spacing-xl);
+}
+
+.searchSection {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.searchInput {
+  flex: 1;
+}
+
+.viewControls {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.filtersSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-md);
+  align-items: end;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.filterLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.filterSelect {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  min-height: 2.5rem;
+  transition: border-color var(--transition-fast);
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.clearButton {
+  align-self: end;
+}
+
+.resultsSection {
+  margin-bottom: var(--spacing-xl);
+}
+
+.resultsHeader {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.resultsCount {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+}
+
+.itemsGrid {
+  display: grid;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.itemsGrid.grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.itemsGrid.list {
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.listItem {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--spacing-md);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.paginationPages {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-2xl);
+}
+
+.emptyIcon {
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  justify-content: center;
+}
+
+.emptyTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.emptyDescription {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .title {
+    font-size: 2rem;
+}
+
+@media (max-width: 480px) {
+  .itemsPage {
+    padding: var(--spacing-md) 0;
+  }
+  
+  .header {
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .subtitle {
+    font-size: 0.875rem;
+  }
+  
+  .filtersCard {
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .title {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .subtitle {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .filterLabel {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .filterSelect {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .filterSelect:focus {
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .resultsCount {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .emptyIcon {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .emptyTitle {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .emptyDescription {
+  color: #d1d5db;
+}
+  
+  .itemsGrid.grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .searchSection {
+    flex-direction: column;
+  }
+  
+  .viewControls {
+    justify-content: center;
+  }
+  
+  .filtersSection {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .clearButton {
+    align-self: stretch;
+  }
+  
+  .itemsGrid.grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .itemsGrid.list {
+    grid-template-columns: 1fr;
+  }
+  
+  .listItem {
+    grid-template-columns: 1fr;
+  }
+  
+  .pagination {
+    flex-wrap: wrap;
+  }
+  
+  .title {
+    font-size: 1.75rem;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+  }
+}

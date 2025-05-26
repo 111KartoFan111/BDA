@@ -1,0 +1,234 @@
+.navigation {
+  display: flex;
+  align-items: center;
+}
+
+.horizontal {
+  flex-direction: row;
+  gap: var(--spacing-md);
+}
+
+.vertical {
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.navItems {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.horizontal .navItems {
+  flex-direction: row;
+}
+
+.vertical .navItems {
+  flex-direction: column;
+  width: 100%;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  position: relative;
+  white-space: nowrap;
+}
+
+.navItem:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+.navItem.active {
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+.horizontal .navItem.active::after {
+  content: '';
+  position: absolute;
+  bottom: -var(--spacing-sm);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+}
+
+.vertical .navItem.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--primary-color);
+  border-radius: 0 2px 2px 0;
+}
+
+.navIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.navLabel {
+  font-size: 0.875rem;
+}
+
+.quickActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-left: var(--spacing-md);
+}
+
+.vertical .quickActions {
+  margin-left: 0;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  width: 100%;
+}
+
+.quickAction {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--light-color);
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-color);
+}
+
+.quickAction:hover {
+  background: white;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.quickAction.primary {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.quickAction.primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: white;
+}
+
+.actionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.actionLabel {
+  white-space: nowrap;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+  .horizontal {
+    gap: var(--spacing-sm);
+  }
+  
+  .horizontal .navItems {
+    gap: var(--spacing-xs);
+  }
+  
+  .horizontal .navItem {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.8125rem;
+  }
+  
+  .horizontal .navLabel {
+    display: none;
+  }
+  
+  .horizontal .quickActions {
+    margin-left: var(--spacing-sm);
+  }
+  
+  .horizontal .quickAction {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  
+  .horizontal .actionLabel {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .horizontal .navItems {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .horizontal .navItems::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .horizontal .quickActions {
+    display: none;
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .navItem {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .navItem:hover,
+[data-theme="dark"] .navItem.active {
+  color: var(--primary-color);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="dark"] .quickAction {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .quickAction:hover {
+  background: #4b5563;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+[data-theme="dark"] .quickAction.primary {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .quickAction.primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: white;
+}
+
+[data-theme="dark"] .quickActions {
+  border-top-color: #374151;
+}

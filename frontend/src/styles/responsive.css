@@ -1,0 +1,480 @@
+/* Адаптивные стили и медиа-запросы */
+
+/* Базовые брейкпоинты
+ * Mobile: < 768px
+ * Tablet: 768px - 1024px  
+ * Desktop: > 1024px
+ */
+
+/* Мобильные устройства (до 768px) */
+@media (max-width: 767.98px) {
+  /* Контейнеры */
+  .container {
+    padding-left: var(--spacing-sm);
+    padding-right: var(--spacing-sm);
+  }
+  
+  /* Типография */
+  h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+  
+  h2 {
+    font-size: 1.75rem;
+    line-height: 1.25;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+  }
+  
+  h4 {
+    font-size: 1.25rem;
+  }
+  
+  /* Уменьшенные отступы */
+  .mobile-p-sm {
+    padding: var(--spacing-sm);
+  }
+  
+  .mobile-p-md {
+    padding: var(--spacing-md);
+  }
+  
+  .mobile-mt-sm {
+    margin-top: var(--spacing-sm);
+  }
+  
+  .mobile-mb-sm {
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  /* Гриды для мобильных */
+  .mobile-grid-1 {
+    grid-template-columns: 1fr;
+  }
+  
+  .mobile-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Flexbox для мобильных */
+  .mobile-flex-col {
+    flex-direction: column;
+  }
+  
+  .mobile-flex-wrap {
+    flex-wrap: wrap;
+  }
+  
+  /* Скрытие элементов на мобильных */
+  .mobile-hidden {
+    display: none;
+  }
+  
+  /* Показ элементов только на мобильных */
+  .mobile-only {
+    display: block;
+  }
+  
+  /* Touch-friendly кнопки */
+  button,
+  .btn,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Увеличенные области клика */
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  /* Формы на мобильных */
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* Предотвращает зум на iOS */
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  
+  /* Модальные окна на всю ширину */
+  .modal-mobile-full {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+  }
+  
+  /* Карточки без отступов по краям */
+  .mobile-card-full {
+    margin-left: calc(-1 * var(--spacing-sm));
+    margin-right: calc(-1 * var(--spacing-sm));
+    border-radius: 0;
+  }
+}
+
+/* Очень маленькие экраны (до 480px) */
+@media (max-width: 479.98px) {
+  /* Еще более мелкие заголовки */
+  h1 {
+    font-size: 1.75rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+  }
+  
+  /* Минимальные отступы */
+  .container {
+    padding-left: var(--spacing-xs);
+    padding-right: var(--spacing-xs);
+  }
+  
+  /* Односколоночная компоновка */
+  .small-mobile-single-col {
+    grid-template-columns: 1fr !important;
+    flex-direction: column;
+  }
+  
+  /* Скрытие второстепенного контента */
+  .small-mobile-hidden {
+    display: none;
+  }
+  
+  /* Уменьшенные кнопки */
+  .btn-small-mobile {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-sm);
+  }
+}
+
+/* Планшеты (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  /* Показ элементов только на планшетах */
+  .tablet-only {
+    display: block;
+  }
+  
+  /* Скрытие на планшетах */
+  .tablet-hidden {
+    display: none;
+  }
+  
+  /* Гриды для планшетов */
+  .tablet-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tablet-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  /* Адаптивная типография */
+  h1 {
+    font-size: 2.25rem;
+  }
+  
+  h2 {
+    font-size: 1.875rem;
+  }
+}
+
+/* Минимальная ширина для планшетов */
+@media (min-width: 768px) {
+  /* Скрытие мобильных элементов */
+  .mobile-only {
+    display: none;
+  }
+  
+  /* Показ элементов от планшетов и выше */
+  .tablet-up {
+    display: block;
+  }
+  
+  /* Гриды от планшетов */
+  .md-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .md-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .md-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  /* Flexbox от планшетов */
+  .md-flex {
+    display: flex;
+  }
+  
+  .md-flex-row {
+    flex-direction: row;
+  }
+  
+  /* Отступы от планшетов */
+  .md-p-lg {
+    padding: var(--spacing-lg);
+  }
+  
+  .md-m-lg {
+    margin: var(--spacing-lg);
+  }
+}
+
+/* Десктопы (от 1024px) */
+@media (min-width: 1024px) {
+  /* Скрытие на десктопах */
+  .desktop-hidden {
+    display: none;
+  }
+  
+  /* Показ только на десктопах */
+  .desktop-only {
+    display: block;
+  }
+  
+  /* Большие гриды */
+  .lg-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .lg-grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  
+  .lg-grid-6 {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  
+  /* Hover эффекты только на десктопах */
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+  
+  /* Типография для больших экранов */
+  h1 {
+    font-size: 3rem;
+  }
+  
+  h2 {
+    font-size: 2.5rem;
+  }
+}
+
+/* Большие десктопы (от 1280px) */
+@media (min-width: 1280px) {
+  /* Еще большие заголовки */
+  h1 {
+    font-size: 3.5rem;
+  }
+  
+  /* Максимальная ширина контента */
+  .xl-max-w-7xl {
+    max-width: 80rem;
+  }
+  
+  /* Большие отступы */
+  .xl-p-2xl {
+    padding: var(--spacing-2xl);
+  }
+}
+
+/* Очень большие экраны (от 1536px) */
+@media (min-width: 1536px) {
+  /* Ограничение роста контента */
+  .container {
+    max-width: 1400px;
+  }
+  
+  /* Максимальные размеры заголовков */
+  h1 {
+    font-size: 4rem;
+  }
+}
+
+/* Адаптивные утилиты для скрытия/показа */
+@media (max-width: 639.98px) {
+  .sm\:hidden { display: none; }
+}
+
+@media (min-width: 640px) {
+  .sm\:block { display: block; }
+  .sm\:flex { display: flex; }
+  .sm\:grid { display: grid; }
+}
+
+@media (max-width: 767.98px) {
+  .md\:hidden { display: none; }
+}
+
+@media (min-width: 768px) {
+  .md\:block { display: block; }
+  .md\:flex { display: flex; }
+  .md\:grid { display: grid; }
+}
+
+@media (max-width: 1023.98px) {
+  .lg\:hidden { display: none; }
+}
+
+@media (min-width: 1024px) {
+  .lg\:block { display: block; }
+  .lg\:flex { display: flex; }
+  .lg\:grid { display: grid; }
+}
+
+/* Адаптивная типография */
+@media (max-width: 767.98px) {
+  .responsive-text-sm {
+    font-size: var(--text-sm);
+  }
+  
+  .responsive-text-base {
+    font-size: var(--text-base);
+  }
+  
+  .responsive-text-lg {
+    font-size: var(--text-lg);
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-text-sm {
+    font-size: var(--text-base);
+  }
+  
+  .responsive-text-base {
+    font-size: var(--text-lg);
+  }
+  
+  .responsive-text-lg {
+    font-size: var(--text-xl);
+  }
+}
+
+/* Ориентация устройства */
+@media (orientation: portrait) {
+  .portrait-only {
+    display: block;
+  }
+  
+  .landscape-hidden {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) {
+  .landscape-only {
+    display: block;
+  }
+  
+  .portrait-hidden {
+    display: none;
+  }
+  
+  /* Мобильные устройства в альбомной ориентации */
+  @media (max-height: 500px) {
+    .mobile-landscape-compact {
+      padding: var(--spacing-xs);
+    }
+    
+    .mobile-landscape-small-text {
+      font-size: var(--text-sm);
+    }
+  }
+}
+
+/* Высокое разрешение экранов */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .retina-border {
+    border-width: 0.5px;
+  }
+  
+  .retina-hidden {
+    display: none;
+  }
+}
+
+/* Печать */
+@media print {
+  /* Скрытие интерактивных элементов */
+  .print-hidden,
+  button,
+  .btn,
+  nav,
+  .navigation,
+  .sidebar,
+  .modal,
+  .tooltip {
+    display: none !important;
+  }
+  
+  /* Оптимизация для печати */
+  * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+  
+  a {
+    text-decoration: underline;
+  }
+  
+  /* Показ URL для ссылок */
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: smaller;
+  }
+  
+  /* Разрывы страниц */
+  .page-break-before {
+    page-break-before: always;
+  }
+  
+  .page-break-after {
+    page-break-after: always;
+  }
+  
+  .page-break-inside-avoid {
+    page-break-inside: avoid;
+  }
+}
+
+/* Специальные случаи для touch устройств */
+@media (hover: none) and (pointer: coarse) {
+  /* Увеличиваем области клика на touch устройствах */
+  button,
+  .btn,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Убираем hover эффекты */
+  .hover-effect:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* Touch-friendly spacing */
+  .touch-spacing {
+    margin: var(--spacing-sm);
+  }
+}

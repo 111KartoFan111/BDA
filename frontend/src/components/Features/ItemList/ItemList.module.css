@@ -1,0 +1,287 @@
+.itemList {
+  width: 100%;
+}
+
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.errorMessage {
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.errorMessage h3 {
+  color: var(--error-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+.errorMessage p {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.controlPanel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  gap: var(--spacing-md);
+}
+
+.leftControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.resultsInfo {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.rightControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.sortControl {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sortLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.sortSelect {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.sortSelect:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.viewModeControl {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.itemsGrid {
+  display: grid;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.itemsGrid.grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.itemsGrid.list {
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.listItem {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-xl) 0;
+}
+
+.paginationPages {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.loadMoreContainer {
+  display: flex;
+  justify-content: center;
+  margin: var(--spacing-xl) 0;
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  background: var(--light-color);
+  border-radius: var(--radius-lg);
+  margin: var(--spacing-xl) 0;
+}
+
+.emptyIcon {
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  justify-content: center;
+}
+
+.emptyTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.emptyDescription {
+  color: var(--text-secondary);
+  max-width: 400px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .itemsGrid.grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .controlPanel {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: stretch;
+  }
+  
+  .leftControls,
+  .rightControls {
+    justify-content: space-between;
+  }
+  
+  .itemsGrid.grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .itemsGrid.list {
+    grid-template-columns: 1fr;
+  }
+  
+  .listItem {
+    grid-template-columns: 1fr;
+  }
+  
+  .pagination {
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+  
+  .paginationPages {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .controlPanel {
+    padding: var(--spacing-sm);
+  }
+  
+  .leftControls,
+  .rightControls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+  
+  .sortControl {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .sortLabel {
+    justify-content: center;
+  }
+  
+  .viewModeControl {
+    justify-content: center;
+  }
+  
+  .emptyState {
+    padding: var(--spacing-lg);
+  }
+  
+  .emptyTitle {
+    font-size: 1.25rem;
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .controlPanel {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .resultsInfo {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .sortLabel {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .sortSelect {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .sortSelect:focus {
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .emptyState {
+  background: #374151;
+}
+
+[data-theme="dark"] .emptyIcon {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .emptyTitle {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .emptyDescription {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .errorMessage h3 {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .errorMessage p {
+  color: #d1d5db;
+}

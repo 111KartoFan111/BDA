@@ -1,0 +1,356 @@
+.contractCard {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.contractCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.contractCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--border-color);
+  transition: background-color var(--transition-fast);
+}
+
+.statusActive::before {
+  background: var(--success-color);
+}
+
+.statusCompleted::before {
+  background: var(--primary-color);
+}
+
+.statusCancelled::before {
+  background: var(--error-color);
+}
+
+.statusDisputed::before {
+  background: var(--warning-color);
+}
+
+.statusPending::before {
+  background: var(--warning-color);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+  gap: var(--spacing-md);
+}
+
+.contractInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.contractTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contractId {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--light-color);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.statusIconActive {
+  color: var(--success-color);
+}
+
+.statusIconCompleted {
+  color: var(--primary-color);
+}
+
+.statusIconCancelled {
+  color: var(--error-color);
+}
+
+.statusIconDisputed {
+  color: var(--warning-color);
+}
+
+.statusIconPending {
+  color: var(--warning-color);
+}
+
+.statusIconDefault {
+  color: var(--text-muted);
+}
+
+.cardContent {
+  display: grid;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.contractDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+}
+
+.detailLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.detailValue {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  text-align: right;
+  line-height: 1.4;
+}
+
+.duration {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.blockchainLink {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8125rem;
+  transition: color var(--transition-fast);
+}
+
+.blockchainLink:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+.itemPreview {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--light-color);
+  border-radius: var(--radius-md);
+}
+
+.itemImage {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--border-color);
+}
+
+.itemImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemPrice {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.cardActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.viewButton {
+  text-decoration: none;
+}
+
+.actionButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+/* Вариант compact */
+.compact {
+  padding: var(--spacing-md);
+}
+
+.compact .cardContent {
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.compact .itemPreview {
+  display: none;
+}
+
+.compact .contractDetails {
+  gap: var(--spacing-xs);
+}
+
+.compact .detailRow {
+  padding: 2px 0;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .contractCard {
+    padding: var(--spacing-md);
+  }
+  
+  .cardHeader {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: stretch;
+  }
+  
+  .statusBadge {
+    align-self: flex-start;
+  }
+  
+  .detailRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+  
+  .detailValue {
+    text-align: left;
+  }
+  
+  .actionButtons {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .contractCard {
+    padding: var(--spacing-sm);
+  }
+  
+  .contractTitle {
+    font-size: 1rem;
+  }
+  
+  .itemPreview {
+    padding: var(--spacing-xs);
+  }
+  
+  .itemImage {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .contractCard {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .contractTitle {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .contractId {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .statusBadge {
+  background: #374151;
+}
+
+[data-theme="dark"] .detailLabel {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .detailValue {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .duration {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .itemPreview {
+  background: #374151;
+}
+
+[data-theme="dark"] .itemTitle {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .itemPrice {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .imagePlaceholder {
+  color: #6b7280;
+}
