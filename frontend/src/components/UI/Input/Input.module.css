@@ -1,0 +1,224 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.required {
+  color: var(--error-color);
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: white;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Размеры */
+.small {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 0.875rem;
+  min-height: 2rem;
+}
+
+.medium {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 1rem;
+  min-height: 2.5rem;
+}
+
+.large {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: 1.125rem;
+  min-height: 3rem;
+}
+
+/* Состояния */
+.focused {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.error {
+  border-color: var(--error-color);
+}
+
+.error:focus {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.disabled {
+  background-color: var(--light-color);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* С иконкой */
+.withIcon {
+  padding-left: 2.5rem;
+}
+
+.iconWrapper {
+  position: absolute;
+  left: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+/* С суффиксом */
+.withSuffix {
+  padding-right: 2.5rem;
+}
+
+.suffixWrapper {
+  position: absolute;
+  right: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  z-index: 1;
+}
+
+.suffix {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.passwordToggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast);
+}
+
+.passwordToggle:hover {
+  color: var(--text-secondary);
+}
+
+.passwordToggle:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Текст помощи */
+.helpText {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.errorText {
+  color: var(--error-color);
+}
+
+.helperText {
+  color: var(--text-muted);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .input {
+    font-size: 16px; /* Предотвращает зум на iOS */
+  }
+  
+  .medium {
+    min-height: 2.75rem;
+  }
+  
+  .large {
+    min-height: 3.25rem;
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .input {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+[data-theme="dark"] .input::placeholder {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .disabled {
+  background-color: #1f2937;
+  color: #6b7280;
+}
+
+[data-theme="dark"] .label {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .iconWrapper {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .suffix {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .passwordToggle {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .passwordToggle:hover {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .helperText {
+  color: #9ca3af;
+}

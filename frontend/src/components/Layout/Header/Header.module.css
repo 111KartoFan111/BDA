@@ -1,0 +1,459 @@
+.header {
+  background-color: white;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-sm);
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) 0;
+  gap: var(--spacing-md);
+}
+
+/* Логотип */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.logoIcon {
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.logoIcon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.logoText {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Навигация для десктопа */
+.desktopNav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.navLink {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.navLink:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+.navLink.active {
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+.navLink.active::after {
+  content: '';
+  position: absolute;
+  bottom: -var(--spacing-sm);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+}
+
+/* Правая секция */
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+/* Переключатель темы */
+.themeToggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.themeToggle:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+/* Кошелек */
+.walletSection {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.walletInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background-color: var(--light-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.walletBalance {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.walletButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.walletButton:hover {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+/* Аутентификация */
+.authButtons {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.profileSection {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.createButton {
+  white-space: nowrap;
+}
+
+/* Профильное меню */
+.profileMenu {
+  position: relative;
+}
+
+.profileButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.profileButton:hover {
+  background-color: var(--primary-light);
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userName {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.profileDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--spacing-xs);
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  min-width: 200px;
+  z-index: var(--z-dropdown);
+  overflow: hidden;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-primary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.dropdownItem:hover {
+  background-color: var(--light-color);
+}
+
+/* Мобильное меню */
+.mobileMenuButton {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.mobileMenuButton:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+.mobileNav {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown);
+}
+
+.mobileNavContent {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.mobileNavLink {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-primary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  font-weight: 500;
+}
+
+.mobileNavLink:hover {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.mobileNavLink.active {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.mobileDivider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: var(--spacing-sm) 0;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .createButton {
+    display: none;
+  }
+  
+  .userName {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktopNav {
+    display: none;
+  }
+  
+  .authButtons {
+    display: none;
+  }
+  
+  .profileSection {
+    display: none;
+  }
+  
+  .mobileMenuButton {
+    display: flex;
+  }
+  
+  .walletInfo {
+    padding: var(--spacing-xs);
+  }
+  
+  .walletBalance {
+    display: none;
+  }
+  
+  .headerContent {
+    padding: var(--spacing-sm) 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .logoText {
+    display: none;
+  }
+  
+  .themeToggle {
+    padding: var(--spacing-xs);
+  }
+  
+  .walletSection {
+    gap: var(--spacing-xs);
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .header {
+  background-color: #1f2937;
+  border-bottom-color: #374151;
+}
+
+[data-theme="dark"] .logo {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .navLink {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .navLink:hover,
+[data-theme="dark"] .navLink.active {
+  color: var(--primary-color);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="dark"] .themeToggle {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .themeToggle:hover {
+  color: var(--primary-color);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="dark"] .walletInfo {
+  background-color: #374151;
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .walletBalance {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .walletButton {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .walletButton:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--primary-color);
+}
+
+[data-theme="dark"] .userName {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .profileDropdown {
+  background-color: #374151;
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .dropdownItem {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .dropdownItem:hover {
+  background-color: #4b5563;
+}
+
+[data-theme="dark"] .mobileNav {
+  background-color: #1f2937;
+  border-bottom-color: #374151;
+}
+
+[data-theme="dark"] .mobileNavLink {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .mobileNavLink:hover,
+[data-theme="dark"] .mobileNavLink.active {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--primary-color);
+}
+
+[data-theme="dark"] .mobileDivider {
+  background-color: #374151;
+}
