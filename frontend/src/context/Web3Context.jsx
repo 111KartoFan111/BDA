@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import Web3 from 'web3'
-import { web3Service } from '../services/blockchain/web3'
+import web3Service from '../services/blockchain/web3'
 import toast from 'react-hot-toast'
 
 const Web3Context = createContext()

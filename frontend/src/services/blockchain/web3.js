@@ -4,17 +4,16 @@ import {
   getRentalContract, 
   CONTRACT_STATUS,
   executeTransaction,
-  handleWeb3Error 
 } from './contracts'
 import { 
   isMetaMaskInstalled,
-  getCurrentAccount,
+  getCurrentAccount as fetchCurrentAccount,
   getChainId,
   switchNetwork,
   getBalance,
   toWei,
   fromWei,
-  waitForTransaction
+  waitForTransaction,handleWeb3Error
 } from './utils'
 
 class Web3Service {
@@ -33,7 +32,7 @@ class Web3Service {
 
     try {
       this.web3 = new Web3(window.ethereum)
-      this.account = await getCurrentAccount()
+      this.account = await fetchCurrentAccount()
       this.chainId = await getChainId()
       
       // Переключаемся на Sepolia testnet если нужно
