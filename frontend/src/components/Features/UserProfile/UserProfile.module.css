@@ -1,0 +1,485 @@
+.userProfile {
+  padding: var(--spacing-lg) 0;
+}
+
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+}
+
+.errorContainer h2 {
+  color: var(--error-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+.errorContainer p {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.profileHeader {
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+}
+
+.profileInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.avatarSection {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 3px solid white;
+  box-shadow: var(--shadow-md);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.initials {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.verifiedBadge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: var(--success-color);
+  color: white;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.userName {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.2;
+}
+
+.userBio {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.5;
+}
+
+.userMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.metaItem svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.profileActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-xs);
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.tabsContainer {
+  margin-bottom: var(--spacing-lg);
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background: white;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  overflow: hidden;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.tabCount {
+  background: var(--gray-200);
+  color: var(--text-muted);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tab.active .tabCount {
+  background: var(--primary-color);
+  color: white;
+}
+
+.tabContent {
+  min-height: 400px;
+}
+
+.itemsTab {
+  background: white;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.itemsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.reviewsTab {
+  background: white;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.reviewsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.reviewCard {
+  padding: var(--spacing-lg);
+}
+
+.reviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+}
+
+.reviewAuthor {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.reviewAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.reviewAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reviewAuthorName {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.reviewDate {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.reviewRating {
+  display: flex;
+  gap: 2px;
+}
+
+.starFilled {
+  color: var(--warning-color);
+  fill: currentColor;
+}
+
+.starEmpty {
+  color: var(--border-color);
+}
+
+.reviewComment {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.emptyState svg {
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.5;
+}
+
+.emptyState h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.emptyState p {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+  max-width: 400px;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .itemsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .userProfile {
+    padding: var(--spacing-md) 0;
+  }
+  
+  .profileHeader {
+    padding: var(--spacing-lg);
+  }
+  
+  .profileInfo {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-md);
+  }
+  
+  .userDetails {
+    text-align: center;
+  }
+  
+  .userMeta {
+    justify-content: center;
+  }
+  
+  .profileActions {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+  
+  .userName {
+    font-size: 1.5rem;
+  }
+  
+  .itemsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tabs {
+    border-radius: 0;
+  }
+  
+  .itemsTab,
+  .reviewsTab {
+    border-radius: 0;
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .profileHeader {
+    padding: var(--spacing-md);
+  }
+  
+  .avatar {
+    width: 5rem;
+    height: 5rem;
+  }
+  
+  .userName {
+    font-size: 1.25rem;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tab {
+    padding: var(--spacing-sm) var(--spacing-md);
+    justify-content: center;
+  }
+  
+  .profileActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .reviewHeader {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .userName {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .userBio {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .metaItem {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .metaItem svg {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .statsGrid {
+  border-top-color: #374151;
+}
+
+[data-theme="dark"] .statLabel {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .tabs {
+  border-bottom-color: #374151;
+  background: #1f2937;
+}
+
+[data-theme="dark"] .tab {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .tab:hover,
+[data-theme="dark"] .tab.active {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="dark"] .tabCount {
+  background: #374151;
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .itemsTab,
+[data-theme="dark"] .reviewsTab {
+  background: #1f2937;
+}
+
+[data-theme="dark"] .reviewAuthorName {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .reviewDate {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .reviewComment {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .emptyState h3 {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .emptyState p {
+  color: #d1d5db;
+}

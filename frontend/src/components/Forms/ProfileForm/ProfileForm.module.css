@@ -1,0 +1,267 @@
+.profileForm {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+}
+
+.formHeader {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.formTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.formSubtitle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+/* Аватар */
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.avatarContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.avatar {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 3px solid white;
+  box-shadow: var(--shadow-md);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarButton {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  border: 2px solid white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
+}
+
+.avatarButton:hover {
+  background: var(--primary-hover);
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.avatarHint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Секции формы */
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.sectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--primary-light);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+/* Текстовое поле */
+.textareaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.textareaLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color var(--transition-fast);
+  line-height: 1.5;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.textarea.error {
+  border-color: var(--error-color);
+}
+
+.textarea.error:focus {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.charCount {
+  align-self: flex-end;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.errorText {
+  color: var(--error-color);
+  font-size: 0.75rem;
+  margin-top: var(--spacing-xs);
+}
+
+/* Действия */
+.formActions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .profileForm {
+    padding: var(--spacing-lg);
+  }
+  
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+  
+  .formActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .avatar {
+    width: 5rem;
+    height: 5rem;
+  }
+  
+  .avatarButton {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profileForm {
+    padding: var(--spacing-md);
+  }
+  
+  .formTitle {
+    font-size: 1.25rem;
+  }
+  
+  .sectionTitle {
+    font-size: 1rem;
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .formTitle {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .formSubtitle {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .sectionTitle {
+  color: #f9fafb;
+  border-bottom-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="dark"] .textareaLabel {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .textarea {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .textarea:focus {
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .textarea.error {
+  border-color: var(--error-color);
+}
+
+[data-theme="dark"] .charCount {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .avatarHint {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .formActions {
+  border-top-color: #374151;
+}
