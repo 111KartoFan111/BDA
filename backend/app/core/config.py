@@ -2,8 +2,8 @@
 Configuration settings for the application.
 """
 
-from typing import List, Optional
-from pydantic import AnyHttpUrl, validator
+from typing import List, Optional, Union
+from pydantic import AnyHttpUrl, field_validator, Field
 from pydantic_settings import BaseSettings
 import secrets
 
@@ -35,21 +35,17 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
     
-    # CORS
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = [
-        "http://localhost:3000",
-        "http://localhost:8080",
-        "https://localhost:3000",
-        "https://localhost:8080"
-    ]
+    # CORS - изменяем на Union[str, List[str]]
+    BACKEND_CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000,https://localhost:3000,http://localhost:8080,https://localhost:8080"
     
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v):
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        elif isinstance(v, list):
             return v
-        raise ValueError(v)
+        return ["http://localhost:3000"]  # default fallback
     
     # Email Configuration
     SMTP_SERVER: str = "localhost"
@@ -61,20 +57,29 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@rentchain.com"
     EMAIL_FROM_NAME: str = "RentChain"
     
-    # File Storage
+    # File Storage - изменяем на Union[str, List[str]]
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
-    ALLOWED_IMAGE_TYPES: List[str] = [
-        "image/jpeg",
-        "image/png", 
-        "image/webp",
-        "image/gif"
-    ]
-    ALLOWED_DOCUMENT_TYPES: List[str] = [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ]
+    ALLOWED_IMAGE_TYPES: Union[str, List[str]] = "image/jpeg,image/png,image/webp,image/gif"
+    ALLOWED_DOCUMENT_TYPES: Union[str, List[str]] = "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    
+    @field_validator("ALLOWED_IMAGE_TYPES", mode="before")
+    @classmethod
+    def parse_allowed_image_types(cls, v):
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        elif isinstance(v, list):
+            return v
+        return ["image/jpeg", "image/png"]  # default fallback
+    
+    @field_validator("ALLOWED_DOCUMENT_TYPES", mode="before")
+    @classmethod
+    def parse_allowed_document_types(cls, v):
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        elif isinstance(v, list):
+            return v
+        return ["application/pdf"]  # default fallback
     
     # Blockchain
     WEB3_PROVIDER_URL: str = "https://sepolia.infura.io/v3/YOUR_INFURA_KEY"
@@ -108,6 +113,9 @@ class Settings(BaseSettings):
     # Admin users (for initial setup)
     FIRST_SUPERUSER_EMAIL: str = "admin@rentchain.com"
     FIRST_SUPERUSER_PASSWORD: str = "changeme123"
+    
+    # Frontend URL
+    FRONTEND_URL: str = "http://localhost:3000"
     
     class Config:
         env_file = ".env"

@@ -3,13 +3,13 @@ Database configuration and session management.
 """
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 import redis
 from typing import Generator
 
 from app.core.config import settings
+from app.models.base import Base  # Импортируем Base из правильного места
 
 # SQLAlchemy setup
 engine = create_engine(
@@ -19,8 +19,6 @@ engine = create_engine(
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
 
 # Redis setup
 redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
@@ -50,8 +48,8 @@ def get_redis() -> redis.Redis:
 # Database utilities
 def init_db() -> None:
     """Initialize database tables."""
-    Base.meta_info.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
 def drop_db() -> None:
     """Drop all database tables."""
-    Base.meta_info.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=engine)

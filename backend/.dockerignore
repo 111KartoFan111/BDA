@@ -1,0 +1,51 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+.DS_Store
+.vscode
+.idea
+
+README.md
+.env.example
+docker-compose.override.yml
+.dockerignore
+Dockerfile
+.gitignore
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Test files
+tests/
+test_*
+*_test.py
+
+# Documentation
+docs/
+*.md
+
+# Logs
+logs/
+*.log
+
+# Node modules (if any)
+node_modules/

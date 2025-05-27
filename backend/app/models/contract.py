@@ -9,10 +9,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from app.models.base import Base
 import uuid
 import enum
 
-from app.models.base import Base
 
 
 class ContractStatus(str, enum.Enum):

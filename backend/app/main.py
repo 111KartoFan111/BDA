@@ -13,7 +13,7 @@ import logging
 
 from app.core.config import settings
 from app.core.database import engine
-from app.models import Base
+from app.models.base import Base  # Импортируем Base из правильного места
 from app.api.v1.api import api_router
 from app.utils.exceptions import (
     CustomHTTPException,
@@ -143,7 +143,7 @@ async def startup_event():
     # Create database tables
     if settings.DEBUG:
         # In production, use Alembic migrations instead
-        Base.meta_info.create_all(bind=engine)
+        Base.metadata.create_all(bind=engine)
         logger.info("Database tables created")
 
 @app.on_event("shutdown")

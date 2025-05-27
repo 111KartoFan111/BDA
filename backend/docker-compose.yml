@@ -6,16 +6,17 @@ services:
     build: .
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/rentchain
-      - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=your-secret-key-here
+    env_file:
+      - .env
     depends_on:
       - db
       - redis
     volumes:
       - ./uploads:/app/uploads
+      - .:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - rentchain_network
 
   # PostgreSQL Database
   db:
@@ -28,7 +29,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db_init:/docker-entrypoint-initdb.d
+    networks:
+      - rentchain_network
 
   # Redis for caching and sessions
   redis:
@@ -37,45 +39,56 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - rentchain_network
 
   # Celery Worker
   celery_worker:
     build: .
-    command: celery -A app.core.celery worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/rentchain
-      - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=your-secret-key-here
+    command: celery -A app.core.celery:celery_app worker --loglevel=info
+    env_file:
+      - .env
     depends_on:
       - db
       - redis
     volumes:
       - ./uploads:/app/uploads
+      - .:/app
+    networks:
+      - rentchain_network
 
   # Celery Beat (Scheduler)
   celery_beat:
     build: .
-    command: celery -A app.core.celery beat --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/rentchain
-      - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=your-secret-key-here
+    command: celery -A app.core.celery:celery_app beat --loglevel=info
+    env_file:
+      - .env
     depends_on:
       - db
       - redis
+    volumes:
+      - .:/app
+    networks:
+      - rentchain_network
 
   # Flower (Celery monitoring)
   flower:
     build: .
-    command: celery -A app.core.celery flower
+    command: celery -A app.core.celery:celery_app flower --port=5555
     ports:
       - "5555:5555"
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/rentchain
-      - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=your-secret-key-here
+    env_file:
+      - .env
     depends_on:
       - redis
+    volumes:
+      - .:/app
+    networks:
+      - rentchain_network
+
+networks:
+  rentchain_network:
+    driver: bridge
 
 volumes:
   postgres_data:
