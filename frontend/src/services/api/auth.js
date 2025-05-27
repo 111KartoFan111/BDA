@@ -1,20 +1,23 @@
 import { apiRequest } from './base'
 
 export const authAPI = {
-  // Регистрация
+  // Регистрация - исправляем поля в соответствии с бэкендом
   register: (userData) => {
-    return apiRequest.post('/auth/register', {
-      firstName: userData.firstName,
-      lastName: userData.lastName,
+    return apiRequest.post('/v1/auth/register', {
+      first_name: userData.firstName,
+      last_name: userData.lastName,
       email: userData.email,
       password: userData.password,
       phone: userData.phone,
+      bio: userData.bio,
+      location: userData.location,
+      website: userData.website,
     })
   },
 
   // Вход
   login: (credentials) => {
-    return apiRequest.post('/auth/login', {
+    return apiRequest.post('/v1/auth/login', {
       email: credentials.email,
       password: credentials.password,
     })
@@ -22,53 +25,60 @@ export const authAPI = {
 
   // Выход
   logout: () => {
-    return apiRequest.post('/auth/logout')
+    return apiRequest.post('/v1/auth/logout')
   },
 
   // Получение текущего пользователя
   getCurrentUser: () => {
-    return apiRequest.get('/auth/me')
+    return apiRequest.get('/v1/auth/me')
   },
 
   // Обновление профиля
   updateProfile: (userData) => {
-    return apiRequest.patch('/auth/profile', userData)
+    return apiRequest.patch('/v1/auth/profile', {
+      first_name: userData.firstName,
+      last_name: userData.lastName,
+      phone: userData.phone,
+      bio: userData.bio,
+      location: userData.location,
+      website: userData.website,
+    })
   },
 
   // Изменение пароля
   changePassword: (passwords) => {
-    return apiRequest.patch('/auth/change-password', {
-      currentPassword: passwords.currentPassword,
-      newPassword: passwords.newPassword,
+    return apiRequest.patch('/v1/auth/change-password', {
+      current_password: passwords.currentPassword,
+      new_password: passwords.newPassword,
     })
   },
 
   // Восстановление пароля
   forgotPassword: (email) => {
-    return apiRequest.post('/auth/forgot-password', { email })
+    return apiRequest.post('/v1/auth/forgot-password', { email })
   },
 
   // Сброс пароля
   resetPassword: (data) => {
-    return apiRequest.post('/auth/reset-password', {
+    return apiRequest.post('/v1/auth/reset-password', {
       token: data.token,
-      newPassword: data.newPassword,
+      new_password: data.newPassword,
     })
   },
 
   // Подтверждение email
   verifyEmail: (token) => {
-    return apiRequest.post('/auth/verify-email', { token })
+    return apiRequest.post('/v1/auth/verify-email', { token })
   },
 
   // Повторная отправка письма подтверждения
   resendVerification: () => {
-    return apiRequest.post('/auth/resend-verification')
+    return apiRequest.post('/v1/auth/resend-verification')
   },
 
   // Обновление аватара
   updateAvatar: (formData) => {
-    return apiRequest.post('/auth/avatar', formData, {
+    return apiRequest.post('/v1/auth/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -77,27 +87,27 @@ export const authAPI = {
 
   // Удаление аватара
   deleteAvatar: () => {
-    return apiRequest.delete('/auth/avatar')
+    return apiRequest.delete('/v1/auth/avatar')
   },
 
   // Получение настроек уведомлений
   getNotificationSettings: () => {
-    return apiRequest.get('/auth/notification-settings')
+    return apiRequest.get('/v1/auth/notification-settings')
   },
 
   // Обновление настроек уведомлений
   updateNotificationSettings: (settings) => {
-    return apiRequest.patch('/auth/notification-settings', settings)
+    return apiRequest.patch('/v1/auth/notification-settings', settings)
   },
 
   // Получение истории активности
   getActivityHistory: (params = {}) => {
-    return apiRequest.get('/auth/activity', { params })
+    return apiRequest.get('/v1/auth/activity', { params })
   },
 
   // Удаление аккаунта
   deleteAccount: (password) => {
-    return apiRequest.delete('/auth/account', {
+    return apiRequest.delete('/v1/auth/account', {
       data: { password }
     })
   },

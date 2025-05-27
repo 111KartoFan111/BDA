@@ -106,8 +106,20 @@ class Item(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     published_at = Column(DateTime(timezone=True))
     
-    # Relationships
-    owner = relationship("User", foreign_keys=[owner_id], back_populates="items")
+    # Relationships - Fixed with explicit foreign_keys
+    owner = relationship(
+        "User", 
+        foreign_keys=[owner_id], 
+        back_populates="items"
+    )
+    
+    # Admin who approved this item
+    approver = relationship(
+        "User",
+        foreign_keys=[approved_by],
+        back_populates="approved_items"
+    )
+    
     category = relationship("Category", back_populates="items")
     contracts = relationship("Contract", back_populates="item")
     reviews = relationship("Review", back_populates="item", cascade="all, delete-orphan")

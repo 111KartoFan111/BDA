@@ -91,17 +91,21 @@ export function AuthProvider({ children }) {
 
       try {
         const response = await authAPI.getCurrentUser()
+        
+        // Проверяем структуру ответа от бэкенда
+        const userData = response.data.data || response.data
+        
         dispatch({
           type: authActions.LOGIN_SUCCESS,
           payload: {
-            user: response.data.user,
+            user: userData,
             token: token
           }
         })
       } catch (error) {
+        console.error('Auth check failed:', error)
         localStorage.removeItem('token')
         dispatch({ type: authActions.LOGOUT })
-        console.error('Auth check failed:', error)
       }
     }
 
@@ -115,19 +119,33 @@ export function AuthProvider({ children }) {
 
     try {
       const response = await authAPI.login(credentials)
-      const { user, token } = response.data
+      
+      // Извлекаем данные из ответа бэкенда
+      const responseData = response.data.data || response.data
+      const { access_token, user } = responseData
 
-      localStorage.setItem('token', token)
+      if (!access_token) {
+        throw new Error('Токен не получен от сервера')
+      }
+
+      localStorage.setItem('token', access_token)
       
       dispatch({
         type: authActions.LOGIN_SUCCESS,
-        payload: { user, token }
+        payload: { 
+          user: user,
+          token: access_token 
+        }
       })
 
-      toast.success(`Добро пожаловать, ${user.firstName}!`)
+      toast.success(`Добро пожаловать, ${user.first_name || user.email}!`)
       return { success: true }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Ошибка входа'
+      console.error('Login error:', error)
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.detail || 
+                          error.message || 
+                          'Ошибка входа'
       dispatch({ type: authActions.SET_ERROR, payload: errorMessage })
       toast.error(errorMessage)
       return { success: false, error: errorMessage }
@@ -141,19 +159,48 @@ export function AuthProvider({ children }) {
 
     try {
       const response = await authAPI.register(userData)
-      const { user, token } = response.data
-
-      localStorage.setItem('token', token)
       
-      dispatch({
-        type: authActions.LOGIN_SUCCESS,
-        payload: { user, token }
-      })
-
-      toast.success('Регистрация прошла успешно!')
+      // Проверяем, возвращает ли регистрация токен или требует подтверждения email
+      const responseData = response.data.data || response.data
+      
+      if (responseData.access_token) {
+        // Если токен возвращается сразу
+        localStorage.setItem('token', responseData.access_token)
+        
+        dispatch({
+          type: authActions.LOGIN_SUCCESS,
+          payload: { 
+            user: responseData.user || responseData,
+            token: responseData.access_token 
+          }
+        })
+        
+        toast.success('Регистрация прошла успешно!')
+      } else {
+        // Если требуется подтверждение email
+        dispatch({ type: authActions.SET_LOADING, payload: false })
+        toast.success('Регистрация прошла успешно! Проверьте email для подтверждения.')
+      }
+      
       return { success: true }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Ошибка регистрации'
+      console.error('Registration error:', error)
+      let errorMessage = 'Ошибка регистрации'
+      
+      if (error.response?.data?.details) {
+        // Обработка ошибок валидации
+        const details = error.response.data.details
+        if (Array.isArray(details)) {
+          errorMessage = details.map(err => err.msg).join(', ')
+        } else {
+          errorMessage = details.toString()
+        }
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      }
+      
       dispatch({ type: authActions.SET_ERROR, payload: errorMessage })
       toast.error(errorMessage)
       return { success: false, error: errorMessage }
@@ -161,7 +208,14 @@ export function AuthProvider({ children }) {
   }
 
   // Функция выхода
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await authAPI.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Продолжаем выход даже если запрос не удался
+    }
+    
     localStorage.removeItem('token')
     dispatch({ type: authActions.LOGOUT })
     toast.success('Вы вышли из системы')
@@ -171,14 +225,19 @@ export function AuthProvider({ children }) {
   const updateProfile = async (userData) => {
     try {
       const response = await authAPI.updateProfile(userData)
+      const updatedUser = response.data.data || response.data.user || response.data
+      
       dispatch({
         type: authActions.UPDATE_USER,
-        payload: response.data.user
+        payload: updatedUser
       })
       toast.success('Профиль обновлён')
       return { success: true }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Ошибка обновления профиля'
+      console.error('Profile update error:', error)
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.detail || 
+                          'Ошибка обновления профиля'
       toast.error(errorMessage)
       return { success: false, error: errorMessage }
     }

@@ -35,17 +35,39 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
     
-    # CORS - изменяем на Union[str, List[str]]
-    BACKEND_CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000,https://localhost:3000,http://localhost:8080,https://localhost:8080"
+    # CORS - ИСПРАВЛЕННЫЕ НАСТРОЙКИ
+    BACKEND_CORS_ORIGINS: Union[str, List[str]] = [
+        "http://localhost:3000",
+        "http://localhost:5173", 
+        "http://localhost:8080",
+        "https://localhost:3000",
+        "https://localhost:5173",
+        "https://localhost:8080"
+    ]
     
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v):
         if isinstance(v, str):
-            return [i.strip() for i in v.split(",") if i.strip()]
+            # Если строка, разбиваем по запятым
+            origins = [i.strip() for i in v.split(",") if i.strip()]
+            # Добавляем стандартные origins для разработки если их нет
+            default_origins = [
+                "http://localhost:3000",
+                "http://localhost:5173", 
+                "http://localhost:8080"
+            ]
+            for origin in default_origins:
+                if origin not in origins:
+                    origins.append(origin)
+            return origins
         elif isinstance(v, list):
             return v
-        return ["http://localhost:3000"]  # default fallback
+        return [
+            "http://localhost:3000",
+            "http://localhost:5173", 
+            "http://localhost:8080"
+        ]  # default fallback
     
     # Email Configuration
     SMTP_SERVER: str = "localhost"
@@ -57,11 +79,20 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@rentchain.com"
     EMAIL_FROM_NAME: str = "RentChain"
     
-    # File Storage - изменяем на Union[str, List[str]]
+    # File Storage
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
-    ALLOWED_IMAGE_TYPES: Union[str, List[str]] = "image/jpeg,image/png,image/webp,image/gif"
-    ALLOWED_DOCUMENT_TYPES: Union[str, List[str]] = "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ALLOWED_IMAGE_TYPES: Union[str, List[str]] = [
+        "image/jpeg",
+        "image/png", 
+        "image/webp",
+        "image/gif"
+    ]
+    ALLOWED_DOCUMENT_TYPES: Union[str, List[str]] = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ]
     
     @field_validator("ALLOWED_IMAGE_TYPES", mode="before")
     @classmethod

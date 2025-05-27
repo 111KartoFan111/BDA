@@ -79,8 +79,21 @@ class User(Base):
     email_verified_at = Column(DateTime(timezone=True))
     phone_verified_at = Column(DateTime(timezone=True))
     
-    # Relationships
-    items = relationship("Item", back_populates="owner", cascade="all, delete-orphan")
+    # Relationships - Fixed with explicit foreign_keys
+    items = relationship(
+        "Item", 
+        foreign_keys="Item.owner_id",
+        back_populates="owner", 
+        cascade="all, delete-orphan"
+    )
+    
+    # Items approved by this user (for admins)
+    approved_items = relationship(
+        "Item",
+        foreign_keys="Item.approved_by",
+        back_populates="approver"
+    )
+    
     tenant_contracts = relationship(
         "Contract", 
         foreign_keys="Contract.tenant_id", 

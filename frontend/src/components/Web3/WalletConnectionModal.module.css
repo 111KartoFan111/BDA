@@ -1,0 +1,180 @@
+/* frontend/src/components/Web3/WalletConnectionModal.module.css */
+
+.walletModal {
+  --wallet-primary: #3b82f6;
+  --wallet-success: #10b981;
+  --wallet-warning: #f59e0b;
+  --wallet-error: #ef4444;
+}
+
+.modalContent {
+  padding: var(--spacing-lg);
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Список кошельков */
+.walletList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.walletGrid {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.walletCard {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.walletCard:hover {
+  border-color: var(--wallet-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.walletIcon {
+  font-size: 2rem;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--light-color);
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.walletInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.walletName {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.walletDescription {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.availableIcon {
+  color: var(--wallet-success);
+  flex-shrink: 0;
+}
+
+.installIcon {
+  color: var(--wallet-warning);
+  flex-shrink: 0;
+}
+
+.noWallets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--text-muted);
+}
+
+.noWallets svg {
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.5;
+}
+
+.noWallets h3 {
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Секция установки */
+.installSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.backButton {
+  align-self: flex-start;
+}
+
+.installHeader {
+  text-align: center;
+  padding: var(--spacing-lg) 0;
+}
+
+.installHeader .walletIcon {
+  font-size: 3rem;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto var(--spacing-md);
+}
+
+.installHeader h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.installHeader p {
+  color: var(--text-secondary);
+}
+
+.recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.recommendationCategory {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.categoryTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.walletOptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.recommendationCard {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}

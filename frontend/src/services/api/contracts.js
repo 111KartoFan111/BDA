@@ -3,7 +3,7 @@ import { apiRequest } from './base'
 export const contractsAPI = {
   // Получение списка контрактов пользователя
   getUserContracts: (params = {}) => {
-    return apiRequest.get('/contracts', { params })
+    return apiRequest.get('v1/contracts')
   },
 
   // Получение контракта по ID

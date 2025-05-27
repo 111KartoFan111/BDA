@@ -13,7 +13,7 @@ import logging
 
 from app.core.config import settings
 from app.core.database import engine
-from app.models.base import Base  # Импортируем Base из правильного места
+from app.models.base import Base
 from app.api.v1.api import api_router
 from app.utils.exceptions import (
     CustomHTTPException,
@@ -40,21 +40,41 @@ app = FastAPI(
     redoc_url="/redoc" if settings.DEBUG else None,
 )
 
-# CORS middleware
+# CORS middleware - ИСПРАВЛЕННЫЕ НАСТРОЙКИ
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
         allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],  # Явно указываем методы
+        allow_headers=[
+            "Accept",
+            "Accept-Language", 
+            "Content-Language",
+            "Content-Type",
+            "Authorization",
+            "X-Requested-With",
+            "X-Process-Time"
+        ],
+        expose_headers=["X-Process-Time"],  # Заголовки, которые клиент может видеть
+        max_age=86400,  # 24 часа кеширования preflight запросов
+    )
+else:
+    # Настройки по умолчанию для разработки
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:8080"],
+        allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-# Trusted host middleware
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=["*"] if settings.DEBUG else ["localhost", "127.0.0.1"]
-)
+# Trusted host middleware - только для production
+if not settings.DEBUG:
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=["localhost", "127.0.0.1", "*.yourdomain.com"]
+    )
 
 # Custom middleware for request timing
 @app.middleware("http")
@@ -63,6 +83,20 @@ async def add_process_time_header(request: Request, call_next):
     response = await call_next(request)
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
+    return response
+
+# Middleware для логирования запросов
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"Request: {request.method} {request.url}")
+    
+    # Логируем заголовки для отладки CORS
+    if request.method == "OPTIONS":
+        logger.info(f"OPTIONS request headers: {dict(request.headers)}")
+    
+    response = await call_next(request)
+    
+    logger.info(f"Response: {response.status_code}")
     return response
 
 # Exception handlers
@@ -89,17 +123,29 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # Convert validation errors to serializable format
+    errors = []
+    for error in exc.errors():
+        error_dict = {
+            "type": error.get("type", ""),
+            "loc": list(error.get("loc", [])),
+            "msg": str(error.get("msg", "")),
+            "input": str(error.get("input", "")) if error.get("input") is not None else None
+        }
+        errors.append(error_dict)
+    
     return JSONResponse(
         status_code=422,
         content={
             "error": "VALIDATION_ERROR",
             "message": "Validation failed",
-            "details": exc.errors()
+            "details": errors
         }
     )
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
+    logger.error(f"ValueError: {exc}", exc_info=True)
     return JSONResponse(
         status_code=400,
         content={
@@ -116,6 +162,20 @@ async def general_exception_handler(request: Request, exc: Exception):
         content={
             "error": "INTERNAL_SERVER_ERROR",
             "message": "Internal server error occurred"
+        }
+    )
+
+# Explicit OPTIONS handler for problematic routes
+@app.options("/api/v1/auth/{path:path}")
+async def options_handler():
+    return JSONResponse(
+        status_code=200,
+        content={"message": "OK"},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Accept, Content-Type, Authorization, X-Requested-With",
+            "Access-Control-Max-Age": "86400"
         }
     )
 
@@ -139,6 +199,7 @@ async def startup_event():
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
+    logger.info(f"CORS origins: {settings.BACKEND_CORS_ORIGINS}")
     
     # Create database tables
     if settings.DEBUG:

@@ -1,7 +1,7 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
-// Базовый URL API
+// Базовый URL API - исправляем путь
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 // Создание экземпляра axios
@@ -10,7 +10,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 секунд
+  timeout: 50000, // 30 секунд
 })
 
 // Интерцептор запросов - добавляем токен авторизации
@@ -20,9 +20,21 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // Логирование для отладки
+    console.log('API Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      data: config.data,
+      headers: config.headers
+    })
+    
     return config
   },
   (error) => {
+    console.error('Request interceptor error:', error)
     return Promise.reject(error)
   }
 )
@@ -30,14 +42,30 @@ api.interceptors.request.use(
 // Интерцептор ответов - обработка ошибок
 api.interceptors.response.use(
   (response) => {
+    // Логирование успешных ответов
+    console.log('API Response:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    })
     return response
   },
   (error) => {
+    console.error('API Error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      data: error.response?.data,
+      message: error.message
+    })
+
     const { response } = error
 
     // Если нет ответа от сервера
     if (!response) {
-      toast.error('Ошибка подключения к серверу')
+      const message = error.code === 'ECONNABORTED' 
+        ? 'Превышено время ожидания ответа от сервера'
+        : 'Ошибка подключения к серверу'
+      toast.error(message)
       return Promise.reject(error)
     }
 
@@ -46,8 +74,11 @@ api.interceptors.response.use(
       case 401:
         // Неавторизован - удаляем токен и перенаправляем на логин
         localStorage.removeItem('token')
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login'
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          toast.error('Сессия истекла. Необходимо авторизоваться заново.')
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 1000)
         }
         break
       
@@ -61,6 +92,7 @@ api.interceptors.response.use(
       
       case 422:
         // Ошибки валидации - не показываем toast, обрабатываем в компонентах
+        console.log('Validation errors:', response.data)
         break
       
       case 429:
@@ -75,7 +107,14 @@ api.interceptors.response.use(
         if (response.status >= 500) {
           toast.error('Ошибка сервера. Попробуйте позже')
         } else if (response.data?.message) {
-          toast.error(response.data.message)
+          // Не показываем toast для ошибок валидации и некоторых других
+          if (response.status !== 422 && response.status !== 400) {
+            toast.error(response.data.message)
+          }
+        } else if (response.data?.detail) {
+          if (response.status !== 422 && response.status !== 400) {
+            toast.error(response.data.detail)
+          }
         } else {
           toast.error('Произошла неожиданная ошибка')
         }
@@ -134,6 +173,19 @@ export const checkApiHealth = async () => {
   } catch (error) {
     console.error('API health check failed:', error)
     return null
+  }
+}
+
+// Функция для тестирования подключения к API
+export const testApiConnection = async () => {
+  try {
+    console.log('Testing API connection...')
+    const response = await checkApiHealth()
+    console.log('API Health Response:', response)
+    return response
+  } catch (error) {
+    console.error('API connection test failed:', error)
+    throw error
   }
 }
 
