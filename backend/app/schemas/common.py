@@ -3,8 +3,7 @@ Common schemas used across the application.
 """
 
 from typing import Optional, Generic, TypeVar, List, Dict, Any
-from pydantic import BaseModel
-from pydantic.generics import GenericModel
+from pydantic import BaseModel, ConfigDict
 
 DataT = TypeVar('DataT')
 
@@ -15,8 +14,10 @@ class ResponseBase(BaseModel):
     message: Optional[str] = None
 
 
-class Response(ResponseBase, GenericModel, Generic[DataT]):
+class Response(BaseModel, Generic[DataT]):
     """Generic response schema."""
+    success: bool = True
+    message: Optional[str] = None
     data: Optional[DataT] = None
 
 
@@ -28,7 +29,7 @@ class ErrorResponse(ResponseBase):
 
 
 class PaginationMeta(BaseModel):
-    """Pagination meta_info schema."""
+    """Pagination metadata schema."""
     page: int
     size: int
     total: int
@@ -69,8 +70,7 @@ class SearchFilters(BaseModel):
     page: int = 1
     size: int = 20
     
-    class Config:
-        extra = "allow"  # Allow additional filter fields
+    model_config = ConfigDict(extra="allow")  # Allow additional filter fields
 
 
 class DateRange(BaseModel):

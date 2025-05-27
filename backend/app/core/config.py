@@ -115,7 +115,7 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str = "changeme123"
     
     # Frontend URL
-    FRONTEND_URL: str = "http://localhost:3000"
+    FRONTEND_URL: str = "http://localhost:5173"
     
     class Config:
         env_file = ".env"

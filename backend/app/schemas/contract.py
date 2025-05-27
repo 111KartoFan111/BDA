@@ -3,7 +3,7 @@ Contract schemas for request/response validation.
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator, ConfigDict
 from datetime import datetime
 from decimal import Decimal
 import uuid
@@ -21,13 +21,15 @@ class ContractBase(BaseModel):
     terms: Optional[str] = None
     special_conditions: Optional[str] = None
     
-    @validator('end_date')
-    def validate_end_date(cls, v, values):
-        if 'start_date' in values and v <= values['start_date']:
+    @field_validator('end_date')
+    @classmethod
+    def validate_end_date(cls, v, info):
+        if 'start_date' in info.data and v <= info.data['start_date']:
             raise ValueError('End date must be after start date')
         return v
     
-    @validator('total_price', 'deposit')
+    @field_validator('total_price', 'deposit')
+    @classmethod
     def validate_amounts(cls, v):
         if v < 0:
             raise ValueError('Amount cannot be negative')
@@ -52,6 +54,8 @@ class ContractUpdate(BaseModel):
 
 class ContractInDB(ContractBase):
     """Contract schema for database operations."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     tenant_id: uuid.UUID
     owner_id: uuid.UUID
@@ -73,9 +77,6 @@ class ContractInDB(ContractBase):
     meta_info: Dict[str, Any] = {}
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
 
 class Contract(ContractInDB):
@@ -108,7 +109,8 @@ class ContractMessageBase(BaseModel):
     message_type: str = "text"
     attachments: List[str] = []
     
-    @validator('message')
+    @field_validator('message')
+    @classmethod
     def validate_message(cls, v):
         if not v.strip():
             raise ValueError('Message cannot be empty')
@@ -122,6 +124,8 @@ class ContractMessageCreate(ContractMessageBase):
 
 class ContractMessage(ContractMessageBase):
     """Contract message response schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     contract_id: uuid.UUID
     sender_id: uuid.UUID
@@ -130,9 +134,6 @@ class ContractMessage(ContractMessageBase):
     is_system: bool = False
     created_at: datetime
     read_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
 
 class PaymentBase(BaseModel):
@@ -141,7 +142,8 @@ class PaymentBase(BaseModel):
     payment_type: str
     description: Optional[str] = None
     
-    @validator('amount')
+    @field_validator('amount')
+    @classmethod
     def validate_amount(cls, v):
         if v <= 0:
             raise ValueError('Amount must be greater than 0')
@@ -155,6 +157,8 @@ class PaymentCreate(PaymentBase):
 
 class Payment(PaymentBase):
     """Payment response schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     contract_id: uuid.UUID
     payer_id: uuid.UUID
@@ -169,9 +173,6 @@ class Payment(PaymentBase):
     created_at: datetime
     processed_at: Optional[datetime] = None
     confirmed_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
 
 class DisputeBase(BaseModel):
@@ -180,7 +181,8 @@ class DisputeBase(BaseModel):
     description: str
     evidence: List[str] = []
     
-    @validator('reason', 'description')
+    @field_validator('reason', 'description')
+    @classmethod
     def validate_text_fields(cls, v):
         if not v.strip():
             raise ValueError('Field cannot be empty')
@@ -203,6 +205,8 @@ class DisputeUpdate(BaseModel):
 
 class Dispute(DisputeBase):
     """Dispute response schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     contract_id: uuid.UUID
     complainant_id: uuid.UUID
@@ -217,13 +221,12 @@ class Dispute(DisputeBase):
     compensation_recipient: Optional[uuid.UUID] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
 
 class ContractHistory(BaseModel):
     """Contract history schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     contract_id: uuid.UUID
     user_id: Optional[uuid.UUID] = None
@@ -233,16 +236,14 @@ class ContractHistory(BaseModel):
     old_value: Optional[Dict[str, Any]] = None
     new_value: Optional[Dict[str, Any]] = None
     created_at: datetime
-    
-    class Config:
-        orm_mode = True
 
 
 class ContractSignature(BaseModel):
     """Contract signature schema."""
     signature: str
     
-    @validator('signature')
+    @field_validator('signature')
+    @classmethod
     def validate_signature(cls, v):
         if not v.strip():
             raise ValueError('Signature cannot be empty')
@@ -254,7 +255,8 @@ class ContractExtension(BaseModel):
     new_end_date: datetime
     additional_price: Decimal
     
-    @validator('additional_price')
+    @field_validator('additional_price')
+    @classmethod
     def validate_price(cls, v):
         if v < 0:
             raise ValueError('Additional price cannot be negative')
@@ -263,6 +265,8 @@ class ContractExtension(BaseModel):
 
 class ContractStats(BaseModel):
     """Contract statistics schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     total_contracts: int = 0
     active_contracts: int = 0
     completed_contracts: int = 0
@@ -272,10 +276,7 @@ class ContractStats(BaseModel):
     average_contract_value: Decimal = 0
     contract_growth: float = 0.0
     status_distribution: Dict[str, int] = {}
-    
-    class Config:
-        orm_mode = True
 
 
-# Forward reference resolution
-ContractDetail.update_forward_refs()
+# Forward reference resolution - нужно делать после определения всех классов
+ContractDetail.model_rebuild()

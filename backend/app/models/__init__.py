@@ -13,7 +13,7 @@ from app.models.notification import Notification, NotificationType
 
 __all__ = [
     "Base",
-    "User", "UserRole", "UserStatus",
+    "User", "UserRole", "UserStatus", 
     "Item", "Category", "ItemStatus", "ItemCondition", "Favorite", "ItemView", "Review",
     "Contract", "ContractMessage", "Payment", "Dispute", "ContractHistory",
     "ContractStatus", "PaymentStatus", "DisputeStatus",

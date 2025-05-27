@@ -3,7 +3,7 @@ User schemas for request/response validation.
 """
 
 from typing import Optional, Dict, Any
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
 from datetime import datetime
 import uuid
 
@@ -25,13 +25,15 @@ class UserCreate(UserBase):
     """User creation schema."""
     password: str
     
-    @validator('password')
+    @field_validator('password')
+    @classmethod
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
         return v
     
-    @validator('first_name', 'last_name')
+    @field_validator('first_name', 'last_name')
+    @classmethod
     def validate_names(cls, v):
         if not v.strip():
             raise ValueError('Name cannot be empty')
@@ -49,7 +51,8 @@ class UserUpdate(BaseModel):
     location: Optional[str] = None
     website: Optional[str] = None
     
-    @validator('first_name', 'last_name')
+    @field_validator('first_name', 'last_name')
+    @classmethod
     def validate_names(cls, v):
         if v is not None and len(v.strip()) < 2:
             raise ValueError('Name must be at least 2 characters long')
@@ -58,6 +61,8 @@ class UserUpdate(BaseModel):
 
 class UserInDB(UserBase):
     """User schema for database operations."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     role: UserRole
     status: UserStatus
@@ -74,9 +79,6 @@ class UserInDB(UserBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
 
 class User(UserInDB):
@@ -103,7 +105,8 @@ class UserPasswordChange(BaseModel):
     current_password: str
     new_password: str
     
-    @validator('new_password')
+    @field_validator('new_password')
+    @classmethod
     def validate_new_password(cls, v):
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
@@ -115,7 +118,8 @@ class UserPasswordReset(BaseModel):
     token: str
     new_password: str
     
-    @validator('new_password')
+    @field_validator('new_password')
+    @classmethod
     def validate_new_password(cls, v):
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
@@ -146,6 +150,8 @@ class TokenData(BaseModel):
 
 class UserStats(BaseModel):
     """User statistics schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     total_items: int = 0
     active_items: int = 0
     total_contracts: int = 0
@@ -154,31 +160,26 @@ class UserStats(BaseModel):
     total_earnings: float = 0.0
     average_rating: Optional[float] = None
     total_reviews: int = 0
-    
-    class Config:
-        orm_mode = True
 
 
 class UserNotificationSettings(BaseModel):
     """User notification settings schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     email_notifications: bool = True
     push_notifications: bool = True
     rental_requests: bool = True
     contract_updates: bool = True
     payment_notifications: bool = True
     marketing_emails: bool = False
-    
-    class Config:
-        orm_mode = True
 
 
 class UserPrivacySettings(BaseModel):
     """User privacy settings schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     profile_visibility: str = "public"  # public, private, friends
     show_email: bool = False
     show_phone: bool = False
     show_location: bool = True
     allow_messages: bool = True
-    
-    class Config:
-        orm_mode = True

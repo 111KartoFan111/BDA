@@ -3,7 +3,7 @@ Item schemas for request/response validation.
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator, ConfigDict
 from datetime import datetime
 from decimal import Decimal
 import uuid
@@ -38,6 +38,8 @@ class CategoryUpdate(BaseModel):
 
 class Category(CategoryBase):
     """Category response schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     parent_id: Optional[uuid.UUID] = None
     level: int = 0
@@ -45,14 +47,11 @@ class Category(CategoryBase):
     is_active: bool = True
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
 
 class CategoryWithChildren(Category):
     """Category with children schema."""
-    children: List[Category] = []
+    children: List['CategoryWithChildren'] = []
 
 
 class ItemBase(BaseModel):
@@ -72,7 +71,8 @@ class ItemBase(BaseModel):
     terms: Optional[str] = None
     tags: List[str] = []
     
-    @validator('title')
+    @field_validator('title')
+    @classmethod
     def validate_title(cls, v):
         if len(v.strip()) < 5:
             raise ValueError('Title must be at least 5 characters long')
@@ -80,7 +80,8 @@ class ItemBase(BaseModel):
             raise ValueError('Title must not exceed 200 characters')
         return v.strip()
     
-    @validator('description')
+    @field_validator('description')
+    @classmethod
     def validate_description(cls, v):
         if len(v.strip()) < 10:
             raise ValueError('Description must be at least 10 characters long')
@@ -88,13 +89,15 @@ class ItemBase(BaseModel):
             raise ValueError('Description must not exceed 2000 characters')
         return v.strip()
     
-    @validator('price_per_day')
+    @field_validator('price_per_day')
+    @classmethod
     def validate_price(cls, v):
         if v <= 0:
             raise ValueError('Price must be greater than 0')
         return v
     
-    @validator('min_rental_days', 'max_rental_days')
+    @field_validator('min_rental_days', 'max_rental_days')
+    @classmethod
     def validate_rental_days(cls, v):
         if v < 1:
             raise ValueError('Rental days must be at least 1')
@@ -130,6 +133,8 @@ class ItemUpdate(BaseModel):
 
 class ItemInDB(ItemBase):
     """Item schema for database operations."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     owner_id: uuid.UUID
     slug: str
@@ -149,9 +154,6 @@ class ItemInDB(ItemBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     published_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
 
 class Item(ItemInDB):
@@ -166,8 +168,7 @@ class ItemDetail(Item):
     """Detailed item schema."""
     similar_items: Optional[List['Item']] = None
     
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ItemList(BaseModel):
@@ -202,7 +203,8 @@ class ReviewBase(BaseModel):
     comment: Optional[str] = None
     ratings: Dict[str, int] = {}
     
-    @validator('rating')
+    @field_validator('rating')
+    @classmethod
     def validate_rating(cls, v):
         if not 1 <= v <= 5:
             raise ValueError('Rating must be between 1 and 5')
@@ -216,6 +218,8 @@ class ReviewCreate(ReviewBase):
 
 class Review(ReviewBase):
     """Review response schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     item_id: uuid.UUID
     reviewer_id: uuid.UUID
@@ -223,9 +227,6 @@ class Review(ReviewBase):
     is_approved: bool = True
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
 
 class FavoriteCreate(BaseModel):
@@ -235,39 +236,36 @@ class FavoriteCreate(BaseModel):
 
 class Favorite(BaseModel):
     """Favorite response schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     user_id: uuid.UUID
     item_id: uuid.UUID
     item: Item
     created_at: datetime
-    
-    class Config:
-        orm_mode = True
 
 
 class ItemView(BaseModel):
     """Item view schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     item_id: uuid.UUID
     user_id: Optional[uuid.UUID] = None
     ip_address: Optional[str] = None
     created_at: datetime
-    
-    class Config:
-        orm_mode = True
 
 
 class ItemStats(BaseModel):
     """Item statistics schema."""
+    model_config = ConfigDict(from_attributes=True)
+    
     total_items: int = 0
     active_items: int = 0
     rented_items: int = 0
     average_price: float = 0.0
     popular_categories: List[Dict[str, Any]] = []
     popular_items: List[Item] = []
-    
-    class Config:
-        orm_mode = True
 
 
 class RentalRequest(BaseModel):
@@ -280,4 +278,5 @@ class RentalRequest(BaseModel):
 
 
 # Forward reference resolution
-ItemDetail.update_forward_refs()
+ItemDetail.model_rebuild()
+CategoryWithChildren.model_rebuild()
