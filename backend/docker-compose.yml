@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/rentchain
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=your-secret-key-here
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: rentchain
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db_init:/docker-entrypoint-initdb.d
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Celery Worker
+  celery_worker:
+    build: .
+    command: celery -A app.core.celery worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/rentchain
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=your-secret-key-here
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+
+  # Celery Beat (Scheduler)
+  celery_beat:
+    build: .
+    command: celery -A app.core.celery beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/rentchain
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=your-secret-key-here
+    depends_on:
+      - db
+      - redis
+
+  # Flower (Celery monitoring)
+  flower:
+    build: .
+    command: celery -A app.core.celery flower
+    ports:
+      - "5555:5555"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/rentchain
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=your-secret-key-here
+    depends_on:
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:
