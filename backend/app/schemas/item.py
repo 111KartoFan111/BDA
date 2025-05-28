@@ -1,18 +1,29 @@
+# 1. Исправить app/schemas/item.py
+
 """
 Item schemas for request/response validation.
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, field_validator, ConfigDict,Field
+from pydantic import BaseModel, field_validator, ConfigDict, Field
 from datetime import datetime
 from decimal import Decimal
 import uuid
 from uuid import UUID
 
-from app.schemas.user import UserOut
-
-from app.models.item import ItemStatus, ItemCondition
-
+# Сначала определяем базовые схемы пользователя
+class UserOut(BaseModel):
+    """Базовая схема пользователя для вывода."""
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: UUID
+    email: str
+    first_name: str
+    last_name: str
+    avatar: Optional[str] = None
+    is_verified: bool = False
+    rating: Optional[float] = None
+    total_reviews: int = 0
 
 class CategoryBase(BaseModel):
     """Base category schema."""
@@ -22,12 +33,10 @@ class CategoryBase(BaseModel):
     icon: Optional[str] = None
     image: Optional[str] = None
 
-
 class CategoryCreate(CategoryBase):
     """Category creation schema."""
     parent_id: Optional[uuid.UUID] = None
     sort_order: int = 0
-
 
 class CategoryUpdate(BaseModel):
     """Category update schema."""
@@ -37,7 +46,6 @@ class CategoryUpdate(BaseModel):
     image: Optional[str] = None
     is_active: Optional[bool] = None
     sort_order: Optional[int] = None
-
 
 class Category(CategoryBase):
     """Category response schema."""
@@ -51,11 +59,9 @@ class Category(CategoryBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-
 class CategoryWithChildren(Category):
     """Category with children schema."""
     children: List['CategoryWithChildren'] = []
-
 
 class ItemBase(BaseModel):
     """Base item schema."""
@@ -65,7 +71,7 @@ class ItemBase(BaseModel):
     price_per_day: Decimal
     deposit: Optional[Decimal] = 0
     location: Optional[str] = None
-    condition: ItemCondition = ItemCondition.GOOD
+    condition: str = "good"  # Используем строку вместо Enum для простоты
     brand: Optional[str] = None
     model: Optional[str] = None
     year: Optional[int] = None
@@ -106,12 +112,10 @@ class ItemBase(BaseModel):
             raise ValueError('Rental days must be at least 1')
         return v
 
-
 class ItemCreate(ItemBase):
     """Item creation schema."""
     available_from: Optional[datetime] = None
     available_to: Optional[datetime] = None
-
 
 class ItemUpdate(BaseModel):
     """Item update schema."""
@@ -121,7 +125,7 @@ class ItemUpdate(BaseModel):
     price_per_day: Optional[Decimal] = None
     deposit: Optional[Decimal] = None
     location: Optional[str] = None
-    condition: Optional[ItemCondition] = None
+    condition: Optional[str] = None
     brand: Optional[str] = None
     model: Optional[str] = None
     year: Optional[int] = None
@@ -133,7 +137,6 @@ class ItemUpdate(BaseModel):
     tags: Optional[List[str]] = None
     is_available: Optional[bool] = None
 
-
 class ItemInDB(ItemBase):
     """Item schema for database operations."""
     model_config = ConfigDict(from_attributes=True)
@@ -141,7 +144,7 @@ class ItemInDB(ItemBase):
     id: uuid.UUID
     owner_id: uuid.UUID
     slug: str
-    status: ItemStatus
+    status: str  # Используем строку вместо Enum
     is_featured: bool = False
     is_available: bool = True
     is_approved: bool = False
@@ -158,22 +161,20 @@ class ItemInDB(ItemBase):
     updated_at: Optional[datetime] = None
     published_at: Optional[datetime] = None
 
-
 class Item(ItemInDB):
     """Public item schema."""
-    category: Category
+    model_config = ConfigDict(from_attributes=True)
     
-    # Owner information (limited)
-    owner: Dict[str, Any] = {}
-
+    category: Category
+    owner: UserOut  # Используем правильную схему пользователя
 
 class ItemDetail(Item):
     """Detailed item schema."""
-    similar_items: Optional[List['Item']] = None
-    
     model_config = ConfigDict(from_attributes=True)
+    
+    similar_items: Optional[List['Item']] = None
 
-
+# Остальные схемы остаются без изменений...
 class ItemList(BaseModel):
     """Item list response schema."""
     items: List[Item]
@@ -182,7 +183,6 @@ class ItemList(BaseModel):
     size: int
     pages: int
 
-
 class ItemSearch(BaseModel):
     """Item search parameters."""
     query: Optional[str] = None
@@ -190,14 +190,13 @@ class ItemSearch(BaseModel):
     min_price: Optional[Decimal] = None
     max_price: Optional[Decimal] = None
     location: Optional[str] = None
-    condition: Optional[ItemCondition] = None
+    condition: Optional[str] = None
     available_from: Optional[datetime] = None
     available_to: Optional[datetime] = None
     sort_by: str = "created_at"
     sort_order: str = "desc"
     page: int = 1
     size: int = 20
-
 
 class ReviewBase(BaseModel):
     """Base review schema."""
@@ -213,11 +212,9 @@ class ReviewBase(BaseModel):
             raise ValueError('Rating must be between 1 and 5')
         return v
 
-
 class ReviewCreate(ReviewBase):
     """Review creation schema."""
     contract_id: Optional[uuid.UUID] = None
-
 
 class Review(ReviewBase):
     """Review response schema."""
@@ -226,16 +223,14 @@ class Review(ReviewBase):
     id: uuid.UUID
     item_id: uuid.UUID
     reviewer_id: uuid.UUID
-    reviewer: Dict[str, Any] = {}
+    reviewer: UserOut
     is_approved: bool = True
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-
 class FavoriteCreate(BaseModel):
     """Favorite creation schema."""
     item_id: uuid.UUID
-
 
 class Favorite(BaseModel):
     """Favorite response schema."""
@@ -247,7 +242,6 @@ class Favorite(BaseModel):
     item: Item
     created_at: datetime
 
-
 class ItemView(BaseModel):
     """Item view schema."""
     model_config = ConfigDict(from_attributes=True)
@@ -257,7 +251,6 @@ class ItemView(BaseModel):
     user_id: Optional[uuid.UUID] = None
     ip_address: Optional[str] = None
     created_at: datetime
-
 
 class ItemStats(BaseModel):
     """Item statistics schema."""
@@ -270,7 +263,6 @@ class ItemStats(BaseModel):
     popular_categories: List[Dict[str, Any]] = []
     popular_items: List[Item] = []
 
-
 class RentalRequest(BaseModel):
     """Rental request schema."""
     item_id: uuid.UUID
@@ -278,26 +270,6 @@ class RentalRequest(BaseModel):
     end_date: datetime
     message: Optional[str] = None
     total_price: Decimal
-
-
-class ItemOut(BaseModel):
-    id: UUID
-    title: str
-    description: str
-    owner: UserOut  # <-- ВАЖНО: используйте Pydantic модель
-
-    price_per_day: float
-    deposit: float
-    currency: str
-    available_from: Optional[datetime]
-    available_to: Optional[datetime]
-    is_available: bool
-
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
-
-    class Config:
-        orm_mode = True
 
 # Forward reference resolution
 ItemDetail.model_rebuild()

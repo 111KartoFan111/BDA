@@ -33,10 +33,10 @@ class ItemService:
         self, 
         search_params: ItemSearch, 
         current_user: Optional[User] = None
-    ) -> PaginatedResponse:
+        ) -> PaginatedResponse:
         """
         Get items with filtering and pagination.
-        
+
         Args:
             search_params: Search parameters
             current_user: Optional current user
@@ -49,7 +49,7 @@ class ItemService:
             Item.is_approved == True,
             Item.is_available == True
         )
-        
+
         # Apply filters
         if search_params.query:
             search_term = f"%{search_params.query}%"
@@ -60,22 +60,22 @@ class ItemService:
                     Item.tags.contains([search_params.query])
                 )
             )
-        
+
         if search_params.category_id:
             query = query.filter(Item.category_id == search_params.category_id)
-        
+
         if search_params.min_price is not None:
             query = query.filter(Item.price_per_day >= search_params.min_price)
-        
+
         if search_params.max_price is not None:
             query = query.filter(Item.price_per_day <= search_params.max_price)
-        
+
         if search_params.location:
             query = query.filter(Item.location.ilike(f"%{search_params.location}%"))
-        
+
         if search_params.condition:
             query = query.filter(Item.condition == search_params.condition)
-        
+
         if search_params.available_from:
             query = query.filter(
                 or_(
@@ -83,7 +83,7 @@ class ItemService:
                     Item.available_from <= search_params.available_from
                 )
             )
-        
+
         if search_params.available_to:
             query = query.filter(
                 or_(
@@ -91,26 +91,98 @@ class ItemService:
                     Item.available_to >= search_params.available_to
                 )
             )
-        
+
         # Apply sorting
         sort_field = getattr(Item, search_params.sort_by, Item.created_at)
         if search_params.sort_order.lower() == "asc":
             query = query.order_by(asc(sort_field))
         else:
             query = query.order_by(desc(sort_field))
-        
+
         # Get total count
         total = query.count()
-        
+
         # Apply pagination
         offset = (search_params.page - 1) * search_params.size
         items = query.offset(offset).limit(search_params.size).all()
-        
+
+        # ВАЖНО: Преобразуем SQLAlchemy объекты в Pydantic схемы
+        items_data = []
+        for item in items:
+            # Создаем данные для owner
+            owner_data = {
+                "id": item.owner.id,
+                "email": item.owner.email,
+                "first_name": item.owner.first_name,
+                "last_name": item.owner.last_name,
+                "avatar": item.owner.avatar,
+                "is_verified": item.owner.is_verified,
+                "rating": float(item.owner.rating) if item.owner.rating else None,
+                "total_reviews": item.owner.total_reviews
+            }
+            
+            # Создаем данные для category
+            category_data = {
+                "id": item.category.id,
+                "name": item.category.name,
+                "slug": item.category.slug,
+                "description": item.category.description,
+                "icon": item.category.icon,
+                "image": item.category.image,
+                "parent_id": item.category.parent_id,
+                "level": item.category.level,
+                "sort_order": item.category.sort_order,
+                "is_active": item.category.is_active,
+                "created_at": item.category.created_at,
+                "updated_at": item.category.updated_at
+            }
+            
+            # Создаем данные для item
+            item_data = {
+                "id": item.id,
+                "title": item.title,
+                "description": item.description,
+                "category_id": item.category_id,
+                "owner_id": item.owner_id,
+                "price_per_day": item.price_per_day,
+                "deposit": item.deposit,
+                "location": item.location,
+                "condition": item.condition.value if hasattr(item.condition, 'value') else item.condition,
+                "brand": item.brand,
+                "model": item.model,
+                "year": item.year,
+                "min_rental_days": item.min_rental_days,
+                "max_rental_days": item.max_rental_days,
+                "terms": item.terms,
+                "tags": item.tags or [],
+                "slug": item.slug,
+                "status": item.status.value if hasattr(item.status, 'value') else item.status,
+                "is_featured": item.is_featured,
+                "is_available": item.is_available,
+                "is_approved": item.is_approved,
+                "images": item.images or [],
+                "documents": item.documents or [],
+                "views_count": item.views_count,
+                "favorites_count": item.favorites_count,
+                "rentals_count": item.rentals_count,
+                "rating": float(item.rating) if item.rating else None,
+                "total_reviews": item.total_reviews,
+                "available_from": item.available_from,
+                "available_to": item.available_to,
+                "created_at": item.created_at,
+                "updated_at": item.updated_at,
+                "published_at": item.published_at,
+                "category": category_data,
+                "owner": owner_data
+            }
+            
+            items_data.append(item_data)
+
         # Calculate pagination meta_info
         pages = (total + search_params.size - 1) // search_params.size
-        
+    
         return PaginatedResponse(
-            items=items,
+            items=items_data,
             meta=PaginationMeta(
                 page=search_params.page,
                 size=search_params.size,
@@ -120,7 +192,7 @@ class ItemService:
                 has_prev=search_params.page > 1
             )
         )
-    
+
     def get_item_by_id(
         self, 
         item_id: uuid.UUID, 
