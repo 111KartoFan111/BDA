@@ -3,152 +3,152 @@ import { apiRequest } from './base'
 export const analyticsAPI = {
   // Общая статистика платформы
   getPlatformStats: (period = '30d') => {
-    return apiRequest.get('/analytics/platform', {
+    return apiRequest.get('/v1/analytics/platform', {
       params: { period }
     })
   },
 
   // Статистика пользователей
   getUserStats: (period = '30d') => {
-    return apiRequest.get('/analytics/users', {
+    return apiRequest.get('/v1/analytics/users', {
       params: { period }
     })
   },
 
   // Статистика товаров
   getItemStats: (period = '30d') => {
-    return apiRequest.get('/analytics/items', {
+    return apiRequest.get('/v1/analytics/items', {
       params: { period }
     })
   },
 
   // Статистика контрактов
   getContractStats: (period = '30d') => {
-    return apiRequest.get('/analytics/contracts', {
+    return apiRequest.get('/v1/analytics/contracts', {
       params: { period }
     })
   },
 
   // Финансовая статистика
   getFinancialStats: (period = '30d') => {
-    return apiRequest.get('/analytics/financial', {
+    return apiRequest.get('/v1/analytics/financial', {
       params: { period }
     })
   },
 
   // Статистика по категориям
   getCategoryStats: (period = '30d') => {
-    return apiRequest.get('/analytics/categories', {
+    return apiRequest.get('/v1/analytics/categories', {
       params: { period }
     })
   },
 
   // Географическая статистика
   getGeoStats: (period = '30d') => {
-    return apiRequest.get('/analytics/geography', {
+    return apiRequest.get('/v1/analytics/geography', {
       params: { period }
     })
   },
 
   // Статистика активности пользователей
   getUserActivityStats: (period = '30d') => {
-    return apiRequest.get('/analytics/user-activity', {
+    return apiRequest.get('/v1/analytics/user-activity', {
       params: { period }
     })
   },
 
   // Конверсионная воронка
   getConversionFunnel: (period = '30d') => {
-    return apiRequest.get('/analytics/conversion-funnel', {
+    return apiRequest.get('/v1/analytics/conversion-funnel', {
       params: { period }
     })
   },
 
   // Анализ трендов
   getTrends: (metric, period = '30d') => {
-    return apiRequest.get('/analytics/trends', {
+    return apiRequest.get('/v1/analytics/trends', {
       params: { metric, period }
     })
   },
 
   // Сравнительная аналитика
   getComparativeStats: (periods) => {
-    return apiRequest.post('/analytics/comparative', { periods })
+    return apiRequest.post('/v1/analytics/comparative', { periods })
   },
 
   // Прогнозирование
   getForecast: (metric, horizon = '30d') => {
-    return apiRequest.get('/analytics/forecast', {
+    return apiRequest.get('/v1/analytics/forecast', {
       params: { metric, horizon }
     })
   },
 
   // Когортный анализ
   getCohortAnalysis: (period = '30d') => {
-    return apiRequest.get('/analytics/cohort', {
+    return apiRequest.get('/v1/analytics/cohort', {
       params: { period }
     })
   },
 
   // Анализ удержания пользователей
   getRetentionAnalysis: (period = '30d') => {
-    return apiRequest.get('/analytics/retention', {
+    return apiRequest.get('/v1/analytics/retention', {
       params: { period }
     })
   },
 
   // Популярные товары
   getPopularItems: (period = '30d', limit = 10) => {
-    return apiRequest.get('/analytics/popular-items', {
+    return apiRequest.get('/v1/analytics/popular-items', {
       params: { period, limit }
     })
   },
 
   // Топ пользователи
   getTopUsers: (period = '30d', limit = 10) => {
-    return apiRequest.get('/analytics/top-users', {
+    return apiRequest.get('/v1/analytics/top-users', {
       params: { period, limit }
     })
   },
 
   // Анализ поведения пользователей
   getUserBehaviorAnalysis: (period = '30d') => {
-    return apiRequest.get('/analytics/user-behavior', {
+    return apiRequest.get('/v1/analytics/user-behavior', {
       params: { period }
     })
   },
 
   // Анализ ценообразования
   getPriceAnalysis: (category = '', period = '30d') => {
-    return apiRequest.get('/analytics/pricing', {
+    return apiRequest.get('/v1/analytics/pricing', {
       params: { category, period }
     })
   },
 
   // Сезонный анализ
   getSeasonalAnalysis: (metric) => {
-    return apiRequest.get('/analytics/seasonal', {
+    return apiRequest.get('/v1/analytics/seasonal', {
       params: { metric }
     })
   },
 
   // Анализ эффективности
   getEfficiencyMetrics: (period = '30d') => {
-    return apiRequest.get('/analytics/efficiency', {
+    return apiRequest.get('/v1/analytics/efficiency', {
       params: { period }
     })
   },
 
   // Метрики качества сервиса
   getQualityMetrics: (period = '30d') => {
-    return apiRequest.get('/analytics/quality', {
+    return apiRequest.get('/v1/analytics/quality', {
       params: { period }
     })
   },
 
   // Анализ рисков
   getRiskAnalysis: (period = '30d') => {
-    return apiRequest.get('/analytics/risk', {
+    return apiRequest.get('/v1/analytics/risk', {
       params: { period }
     })
   },
@@ -163,7 +163,7 @@ export const analyticsAPI = {
 
   // Создание пользовательского отчета
   createCustomReport: (reportConfig) => {
-    return apiRequest.post('/analytics/custom-report', {
+    return apiRequest.post('/v1/analytics/custom-report', {
       name: reportConfig.name,
       description: reportConfig.description,
       metrics: reportConfig.metrics,
@@ -175,7 +175,7 @@ export const analyticsAPI = {
 
   // Получение пользовательских отчетов
   getCustomReports: () => {
-    return apiRequest.get('/analytics/custom-reports')
+    return apiRequest.get('/v1/analytics/custom-reports')
   },
 
   // Получение конкретного пользовательского отчета
@@ -212,12 +212,12 @@ export const analyticsAPI = {
 
   // Получение алертов аналитики
   getAnalyticsAlerts: () => {
-    return apiRequest.get('/analytics/alerts')
+    return apiRequest.get('/v1/analytics/alerts')
   },
 
   // Создание алерта
   createAlert: (alertConfig) => {
-    return apiRequest.post('/analytics/alerts', {
+    return apiRequest.post('/v1/analytics/alerts', {
       name: alertConfig.name,
       metric: alertConfig.metric,
       condition: alertConfig.condition,
@@ -239,7 +239,7 @@ export const analyticsAPI = {
 
   // Получение метрик в реальном времени
   getRealTimeMetrics: () => {
-    return apiRequest.get('/analytics/realtime')
+    return apiRequest.get('/v1/analytics/realtime')
   },
 
   // Анализ A/B тестирования
@@ -249,12 +249,12 @@ export const analyticsAPI = {
 
   // Получение всех A/B тестов
   getABTests: () => {
-    return apiRequest.get('/analytics/ab-tests')
+    return apiRequest.get('/v1/analytics/ab-tests')
   },
 
   // Создание A/B теста
   createABTest: (testConfig) => {
-    return apiRequest.post('/analytics/ab-tests', {
+    return apiRequest.post('/v1/analytics/ab-tests', {
       name: testConfig.name,
       description: testConfig.description,
       variants: testConfig.variants,

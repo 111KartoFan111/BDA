@@ -10,6 +10,7 @@ const initialState = {
   web3: null,
   account: null,
   chainId: null,
+  networkName: null,
   isConnected: false,
   isLoading: false,
   contracts: {},
@@ -53,9 +54,11 @@ function web3Reducer(state, action) {
       }
     
     case web3Actions.SET_CHAIN_ID:
+      const networkName = getNetworkName(action.payload)
       return {
         ...state,
-        chainId: action.payload
+        chainId: action.payload,
+        networkName
       }
     
     case web3Actions.SET_CONNECTED:
@@ -100,6 +103,18 @@ function web3Reducer(state, action) {
   }
 }
 
+// Получение названия сети по chainId
+const getNetworkName = (chainId) => {
+  const networks = {
+    1: 'Ethereum Mainnet',
+    11155111: 'Sepolia Testnet',
+    137: 'Polygon Mainnet',
+    56: 'BSC Mainnet',
+    43114: 'Avalanche C-Chain'
+  }
+  return networks[chainId] || `Unknown Network (${chainId})`
+}
+
 export function Web3Provider({ children }) {
   const [state, dispatch] = useReducer(web3Reducer, initialState)
 
@@ -134,8 +149,14 @@ export function Web3Provider({ children }) {
       }
 
       const handleChainChanged = (chainId) => {
-        dispatch({ type: web3Actions.SET_CHAIN_ID, payload: parseInt(chainId, 16) })
-        window.location.reload()
+        const numericChainId = parseInt(chainId, 16)
+        dispatch({ type: web3Actions.SET_CHAIN_ID, payload: numericChainId })
+        // Перезапускаем подключение для обновления контрактов
+        if (state.account) {
+          setTimeout(() => {
+            connectWallet()
+          }, 1000)
+        }
       }
 
       const handleDisconnect = () => {
@@ -147,12 +168,14 @@ export function Web3Provider({ children }) {
       window.ethereum.on('disconnect', handleDisconnect)
 
       return () => {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
-        window.ethereum.removeListener('chainChanged', handleChainChanged)
-        window.ethereum.removeListener('disconnect', handleDisconnect)
+        if (window.ethereum.removeListener) {
+          window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
+          window.ethereum.removeListener('chainChanged', handleChainChanged)
+          window.ethereum.removeListener('disconnect', handleDisconnect)
+        }
       }
     }
-  }, [])
+  }, [state.account])
 
   // Подключение кошелька
   const connectWallet = async () => {
@@ -199,8 +222,8 @@ export function Web3Provider({ children }) {
                 chainId: '0x' + expectedChainId.toString(16),
                 chainName: 'Sepolia Test Network',
                 nativeCurrency: {
-                  name: 'ETH',
-                  symbol: 'ETH',
+                  name: 'SepoliaETH',
+                  symbol: 'SepoliaETH',
                   decimals: 18
                 },
                 rpcUrls: ['https://sepolia.infura.io/v3/'],
@@ -217,12 +240,19 @@ export function Web3Provider({ children }) {
       dispatch({ type: web3Actions.SET_CONNECTED, payload: true })
 
       // Получение баланса
-      await updateBalance(accounts[0])
+      await updateBalance(accounts[0], web3Instance)
 
-      // Инициализация контрактов
-      await initializeContracts(web3Instance)
+      // Инициализация контрактов (если chainId поддерживается)
+      if (chainId === expectedChainId) {
+        try {
+          await initializeContracts(web3Instance, chainId)
+        } catch (contractError) {
+          console.warn('Contract initialization failed:', contractError)
+          // Не показываем ошибку пользователю, просто логируем
+        }
+      }
 
-      toast.success('Кошелёк подключен успешно!')
+      toast.success(`Кошелёк подключен! Сеть: ${getNetworkName(chainId)}`)
       return { success: true }
     } catch (error) {
       const errorMessage = error.message || 'Ошибка подключения кошелька'
@@ -239,26 +269,34 @@ export function Web3Provider({ children }) {
   }
 
   // Обновление баланса
-  const updateBalance = async (account) => {
-    if (!state.web3 || !account) return
+  const updateBalance = async (account, web3Instance = null) => {
+    const web3ToUse = web3Instance || state.web3
+    if (!web3ToUse || !account) return
 
     try {
-      const balance = await state.web3.eth.getBalance(account)
-      const balanceInEth = state.web3.utils.fromWei(balance, 'ether')
-      dispatch({ type: web3Actions.SET_BALANCE, payload: balanceInEth })
+      const balance = await web3ToUse.eth.getBalance(account)
+      const balanceInEth = web3ToUse.utils.fromWei(balance, 'ether')
+      const formattedBalance = parseFloat(balanceInEth).toFixed(4)
+      dispatch({ type: web3Actions.SET_BALANCE, payload: formattedBalance })
     } catch (error) {
       console.error('Error updating balance:', error)
     }
   }
 
   // Инициализация смарт-контрактов
-  const initializeContracts = async (web3Instance) => {
+  const initializeContracts = async (web3Instance, chainId) => {
     try {
+      // Проверяем, что chainId поддерживается
+      if (chainId !== 11155111) {
+        console.warn('Contracts not available for this network')
+        return
+      }
+
       const contracts = await web3Service.initializeContracts(web3Instance)
       dispatch({ type: web3Actions.SET_CONTRACTS, payload: contracts })
     } catch (error) {
       console.error('Error initializing contracts:', error)
-      toast.error('Ошибка инициализации смарт-контрактов')
+      // Не бросаем ошибку, просто логируем
     }
   }
 
@@ -304,9 +342,62 @@ export function Web3Provider({ children }) {
     }
   }
 
+  // Переключение сети
+  const switchNetwork = async (targetChainId) => {
+    if (!window.ethereum) {
+      toast.error('MetaMask не найден')
+      return { success: false }
+    }
+
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x' + targetChainId.toString(16) }]
+      })
+      return { success: true }
+    } catch (error) {
+      console.error('Error switching network:', error)
+      toast.error('Ошибка переключения сети')
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Добавление сети
+  const addNetwork = async (networkConfig) => {
+    if (!window.ethereum) {
+      toast.error('MetaMask не найден')
+      return { success: false }
+    }
+
+    try {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [networkConfig]
+      })
+      return { success: true }
+    } catch (error) {
+      console.error('Error adding network:', error)
+      toast.error('Ошибка добавления сети')
+      return { success: false, error: error.message }
+    }
+  }
+
   // Очистка ошибок
   const clearError = () => {
     dispatch({ type: web3Actions.CLEAR_ERROR })
+  }
+
+  // Получение отформатированного баланса с символом
+  const getFormattedBalance = () => {
+    if (!state.balance) return '0 ETH'
+    
+    const symbol = state.networkName?.includes('Sepolia') ? 'SepoliaETH' : 'ETH'
+    return `${state.balance} ${symbol}`
+  }
+
+  // Проверка поддерживаемой сети
+  const isSupportedNetwork = () => {
+    return state.chainId === 11155111 // Sepolia
   }
 
   const value = {
@@ -316,7 +407,11 @@ export function Web3Provider({ children }) {
     createRentalContract,
     getContractInfo,
     updateBalance,
-    clearError
+    switchNetwork,
+    addNetwork,
+    clearError,
+    getFormattedBalance,
+    isSupportedNetwork
   }
 
   return (
