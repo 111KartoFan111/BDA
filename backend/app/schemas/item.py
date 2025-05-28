@@ -10,6 +10,7 @@ from datetime import datetime
 from decimal import Decimal
 import uuid
 from uuid import UUID
+from app.schemas.user import UserOut 
 
 # Сначала определяем базовые схемы пользователя
 class UserOut(BaseModel):

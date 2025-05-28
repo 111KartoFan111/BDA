@@ -211,7 +211,8 @@ async def get_item(
 async def create_item(
     item_data: ItemCreate,
     current_user: User = Depends(get_current_user),
-    item_service: ItemService = Depends(get_item_service)
+    item_service: ItemService = Depends(get_item_service),
+    db: Session = Depends(get_db)  # Добавьте зависимость сессии
 ) -> Any:
     """
     Create new item.
@@ -224,12 +225,26 @@ async def create_item(
     Returns:
         Created item
     """
-    item = item_service.create_item(item_data, current_user.id)
-    return Response(
-        data=item,
-        message="Item created successfully"
-    )
-
+    try:
+        # Явно начинаем транзакцию
+        db.begin()
+        
+        item = item_service.create_item(item_data, current_user.id)
+        
+        # Фиксируем изменения
+        db.commit()
+        
+        return Response(
+            data=item,
+            message="Item created successfully"
+        )
+    except Exception as e:
+        # Откатываем в случае ошибки
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create item: {str(e)}"
+        )
 
 @router.patch("/{item_id}", response_model=Response[Item])
 async def update_item(

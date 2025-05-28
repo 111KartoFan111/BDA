@@ -9,21 +9,16 @@ const Footer = () => {
   const footerLinks = {
     platform: [
       { name: 'О платформе', href: '/about' },
-      { name: 'Как это работает', href: '/how-it-works' },
-      { name: 'Безопасность', href: '/security' },
-      { name: 'Комиссии', href: '/fees' }
     ],
     support: [
-      { name: 'Центр помощи', href: '/help' },
       { name: 'Связаться с нами', href: '/contact' },
-      { name: 'Сообщить о проблеме', href: '/report' },
-      { name: 'Статус системы', href: '/status' }
+      { name: 'Сообщить о проблеме', href: 'mailto:support@rentchain.com' },
     ],
     legal: [
       { name: 'Пользовательское соглашение', href: '/terms' },
       { name: 'Политика конфиденциальности', href: '/privacy' },
       { name: 'Правила платформы', href: '/rules' },
-      { name: 'Документы API', href: '/api-docs' }
+      { name: 'Документы API', href: 'http://localhost:8000/docs' }
     ]
   }
 

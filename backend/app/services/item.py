@@ -231,7 +231,7 @@ class ItemService:
         Returns:
             Created item
         """
-        # Generate slug from title
+        # Генерируем slug из заголовка
         slug = self._generate_slug(item_data.title)
         
         item = Item(
@@ -257,11 +257,11 @@ class ItemService:
         )
         
         self.db.add(item)
-        self.db.commit()
+        # Убрали commit здесь, так как он будет в эндпоинте
+        self.db.flush()  # Чтобы получить ID, если нужно
         self.db.refresh(item)
         
         return item
-    
     def update_item(
         self, 
         item_id: uuid.UUID, 
