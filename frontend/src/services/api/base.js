@@ -10,7 +10,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 50000, // 30 секунд
+  timeout: 30000, // 30 секунд
 })
 
 // Интерцептор запросов - добавляем токен авторизации
@@ -28,7 +28,7 @@ api.interceptors.request.use(
       baseURL: config.baseURL,
       fullURL: `${config.baseURL}${config.url}`,
       data: config.data,
-      headers: config.headers
+      params: config.params
     })
     
     return config
@@ -64,8 +64,12 @@ api.interceptors.response.use(
     if (!response) {
       const message = error.code === 'ECONNABORTED' 
         ? 'Превышено время ожидания ответа от сервера'
-        : 'Ошибка подключения к серверу'
-      toast.error(message)
+        : 'Ошибка подключения к серверу. Проверьте, что бэкенд запущен на http://localhost:8000'
+      
+      // Показываем toast только для серьезных ошибок подключения
+      if (error.code !== 'ERR_CANCELED') {
+        toast.error(message)
+      }
       return Promise.reject(error)
     }
 
@@ -74,7 +78,9 @@ api.interceptors.response.use(
       case 401:
         // Неавторизован - удаляем токен и перенаправляем на логин
         localStorage.removeItem('token')
-        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        if (window.location.pathname !== '/login' && 
+            window.location.pathname !== '/register' && 
+            window.location.pathname !== '/') {
           toast.error('Сессия истекла. Необходимо авторизоваться заново.')
           setTimeout(() => {
             window.location.href = '/login'
@@ -87,7 +93,8 @@ api.interceptors.response.use(
         break
       
       case 404:
-        toast.error('Запрашиваемый ресурс не найден')
+        // Для 404 не показываем общий toast, пусть компоненты сами решают
+        console.log('Resource not found:', response.config.url)
         break
       
       case 422:
@@ -103,20 +110,24 @@ api.interceptors.response.use(
         toast.error('Внутренняя ошибка сервера')
         break
       
+      case 502:
+      case 503:
+      case 504:
+        toast.error('Сервер временно недоступен. Попробуйте позже')
+        break
+      
       default:
         if (response.status >= 500) {
           toast.error('Ошибка сервера. Попробуйте позже')
         } else if (response.data?.message) {
-          // Не показываем toast для ошибок валидации и некоторых других
-          if (response.status !== 422 && response.status !== 400) {
+          // Показываем toast только для неожиданных ошибок
+          if (response.status !== 422 && response.status !== 400 && response.status !== 404) {
             toast.error(response.data.message)
           }
         } else if (response.data?.detail) {
-          if (response.status !== 422 && response.status !== 400) {
+          if (response.status !== 422 && response.status !== 400 && response.status !== 404) {
             toast.error(response.data.detail)
           }
-        } else {
-          toast.error('Произошла неожиданная ошибка')
         }
     }
 
@@ -179,13 +190,33 @@ export const checkApiHealth = async () => {
 // Функция для тестирования подключения к API
 export const testApiConnection = async () => {
   try {
-    console.log('Testing API connection...')
-    const response = await checkApiHealth()
-    console.log('API Health Response:', response)
-    return response
+    console.log('Testing API connection to:', API_BASE_URL)
+    
+    // Пробуем простой запрос
+    const response = await api.get('/v1/categories', { 
+      timeout: 5000,
+      // Не показываем ошибки для тестового запроса
+      validateStatus: () => true 
+    })
+    
+    console.log('API connection test result:', {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data
+    })
+    
+    return {
+      success: response.status < 500,
+      status: response.status,
+      message: response.status < 500 ? 'API доступен' : 'API недоступен'
+    }
   } catch (error) {
     console.error('API connection test failed:', error)
-    throw error
+    return {
+      success: false,
+      error: error.message,
+      message: 'Не удается подключиться к API'
+    }
   }
 }
 

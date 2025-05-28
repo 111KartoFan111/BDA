@@ -13,9 +13,9 @@ const ItemsList = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({
-    category: '',
-    minPrice: '',
-    maxPrice: '',
+    category_id: '',
+    min_price: '',
+    max_price: '',
     location: '',
     available: true
   })
@@ -24,30 +24,70 @@ const ItemsList = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [categories, setCategories] = useState([])
+  const [error, setError] = useState(null)
 
   const itemsPerPage = 12
 
   useEffect(() => {
-    loadItems()
     loadCategories()
+  }, [])
+
+  useEffect(() => {
+    loadItems()
   }, [currentPage, sortBy, searchQuery, filters])
 
   const loadItems = async () => {
     try {
       setLoading(true)
+      setError(null)
+      
       const params = {
         page: currentPage,
-        limit: itemsPerPage,
-        sort: sortBy,
-        search: searchQuery,
-        ...filters
+        size: itemsPerPage,
+        sort_by: sortBy,
+        sort_order: sortBy.includes('_desc') ? 'desc' : 'asc',
+        query: searchQuery || undefined,
+        ...Object.fromEntries(
+          Object.entries(filters).filter(([_, value]) => value !== '' && value !== null)
+        )
       }
       
+      console.log('Loading items with params:', params)
+      
       const response = await itemsAPI.getItems(params)
-      setItems(response.data.items || [])
-      setTotalPages(response.data.totalPages || 1)
+      console.log('Items API response:', response)
+      
+      // Обрабатываем ответ от API
+      const responseData = response.data
+      
+      if (responseData.success !== false) {
+        // Если это пагинированный ответ
+        if (responseData.items) {
+          setItems(responseData.items)
+          setTotalPages(responseData.meta?.pages || Math.ceil((responseData.meta?.total || 0) / itemsPerPage))
+        } 
+        // Если это прямой массив данных
+        else if (Array.isArray(responseData.data)) {
+          setItems(responseData.data)
+          setTotalPages(1)
+        }
+        // Если это массив в data
+        else if (Array.isArray(responseData)) {
+          setItems(responseData)
+          setTotalPages(1)
+        }
+        else {
+          console.warn('Unexpected response structure:', responseData)
+          setItems([])
+          setTotalPages(1)
+        }
+      } else {
+        setError(responseData.message || 'Ошибка загрузки товаров')
+        setItems([])
+      }
     } catch (error) {
       console.error('Error loading items:', error)
+      setError(error.response?.data?.message || error.message || 'Ошибка загрузки товаров')
       setItems([])
     } finally {
       setLoading(false)
@@ -56,10 +96,34 @@ const ItemsList = () => {
 
   const loadCategories = async () => {
     try {
+      console.log('Loading categories...')
       const response = await itemsAPI.getCategories()
-      setCategories(response.data || [])
+      console.log('Categories API response:', response)
+      
+      // Обрабатываем ответ от API
+      const responseData = response.data
+      
+      if (responseData.success !== false) {
+        let categoriesData = []
+        
+        // Проверяем различные возможные структуры ответа
+        if (Array.isArray(responseData.data)) {
+          categoriesData = responseData.data
+        } else if (Array.isArray(responseData)) {
+          categoriesData = responseData
+        } else if (responseData.data && Array.isArray(responseData.data)) {
+          categoriesData = responseData.data
+        }
+        
+        console.log('Processed categories:', categoriesData)
+        setCategories(categoriesData)
+      } else {
+        console.error('Categories API error:', responseData.message)
+        setCategories([])
+      }
     } catch (error) {
       console.error('Error loading categories:', error)
+      setCategories([])
     }
   }
 
@@ -83,9 +147,9 @@ const ItemsList = () => {
 
   const clearFilters = () => {
     setFilters({
-      category: '',
-      minPrice: '',
-      maxPrice: '',
+      category_id: '',
+      min_price: '',
+      max_price: '',
       location: '',
       available: true
     })
@@ -96,6 +160,22 @@ const ItemsList = () => {
   const handlePageChange = (page) => {
     setCurrentPage(page)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  if (error) {
+    return (
+      <div className={styles.itemsPage}>
+        <div className="container">
+          <div className={styles.errorContainer}>
+            <h2>Ошибка загрузки</h2>
+            <p>{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Обновить страницу
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -142,12 +222,12 @@ const ItemsList = () => {
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Категория</label>
               <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
+                value={filters.category_id}
+                onChange={(e) => handleFilterChange('category_id', e.target.value)}
                 className={styles.filterSelect}
               >
                 <option value="">Все категории</option>
-                {categories.map(category => (
+                {Array.isArray(categories) && categories.map(category => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
@@ -160,8 +240,8 @@ const ItemsList = () => {
               <Input
                 type="number"
                 placeholder="0"
-                value={filters.minPrice}
-                onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                value={filters.min_price}
+                onChange={(e) => handleFilterChange('min_price', e.target.value)}
                 size="small"
               />
             </div>
@@ -171,8 +251,8 @@ const ItemsList = () => {
               <Input
                 type="number"
                 placeholder="∞"
-                value={filters.maxPrice}
-                onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                value={filters.max_price}
+                onChange={(e) => handleFilterChange('max_price', e.target.value)}
                 size="small"
               />
             </div>
@@ -196,10 +276,11 @@ const ItemsList = () => {
                 className={styles.filterSelect}
               >
                 <option value="created_at">Дата добавления</option>
-                <option value="price_asc">Цена: по возрастанию</option>
-                <option value="price_desc">Цена: по убыванию</option>
+                <option value="price_per_day">Цена: по возрастанию</option>
+                <option value="price_per_day_desc">Цена: по убыванию</option>
                 <option value="rating">Рейтинг</option>
-                <option value="popular">Популярность</option>
+                <option value="views_count">Популярность</option>
+                <option value="title">По алфавиту</option>
               </select>
             </div>
 
@@ -254,16 +335,29 @@ const ItemsList = () => {
                   </Button>
                   
                   <div className={styles.paginationPages}>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <Button
-                        key={page}
-                        variant={page === currentPage ? 'primary' : 'ghost'}
-                        size="small"
-                        onClick={() => handlePageChange(page)}
-                      >
-                        {page}
-                      </Button>
-                    ))}
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      let page
+                      if (totalPages <= 5) {
+                        page = i + 1
+                      } else if (currentPage <= 3) {
+                        page = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        page = totalPages - 4 + i
+                      } else {
+                        page = currentPage - 2 + i
+                      }
+                      
+                      return (
+                        <Button
+                          key={page}
+                          variant={page === currentPage ? 'primary' : 'ghost'}
+                          size="small"
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </Button>
+                      )
+                    })}
                   </div>
                   
                   <Button

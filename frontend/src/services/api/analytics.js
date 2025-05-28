@@ -3,7 +3,7 @@ import { apiRequest } from './base'
 export const analyticsAPI = {
   // Общая статистика платформы
   getPlatformStats: (period = '30d') => {
-    return apiRequest.get('/v1/analytics/platform', {
+    return apiRequest.get('/v1/analytics/dashboard', {
       params: { period }
     })
   },

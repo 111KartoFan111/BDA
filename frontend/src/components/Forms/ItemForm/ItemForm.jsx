@@ -4,11 +4,13 @@ import { itemsAPI } from '../../../services/api/items'
 import Button from '../../UI/Button/Button'
 import Input from '../../UI/Input/Input'
 import Card from '../../UI/Card/Card'
+import toast from 'react-hot-toast'
 import { 
   validateText, 
   validatePrice, 
   validateDate, 
-  validateImage 
+  validateImage,
+  validateForm as validateFormData
 } from '../../../services/utils/validation'
 import styles from './ItemForm.module.css'
 
@@ -29,13 +31,18 @@ const ItemForm = ({
     availableTo: '',
     minRentalDays: '1',
     maxRentalDays: '30',
-    terms: ''
+    terms: '',
+    condition: 'good',
+    brand: '',
+    model: '',
+    year: ''
   })
 
   const [images, setImages] = useState([])
   const [imageFiles, setImageFiles] = useState([])
   const [errors, setErrors] = useState({})
   const [categories, setCategories] = useState([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
 
   // Загружаем данные если редактируем существующий товар
   useEffect(() => {
@@ -43,18 +50,22 @@ const ItemForm = ({
       setFormData({
         title: item.title || '',
         description: item.description || '',
-        category: item.category || '',
-        pricePerDay: item.pricePerDay?.toString() || '',
-        deposit: item.deposit?.toString() || '',
+        category: item.category_id || item.category?.id || '',
+        pricePerDay: item.price_per_day?.toString() || item.pricePerDay?.toString() || '',
+        deposit: item.deposit?.toString() || '0',
         location: item.location || '',
-        availableFrom: item.availableFrom ? item.availableFrom.split('T')[0] : '',
-        availableTo: item.availableTo ? item.availableTo.split('T')[0] : '',
-        minRentalDays: item.minRentalDays?.toString() || '1',
-        maxRentalDays: item.maxRentalDays?.toString() || '30',
-        terms: item.terms || ''
+        availableFrom: item.available_from ? item.available_from.split('T')[0] : '',
+        availableTo: item.available_to ? item.available_to.split('T')[0] : '',
+        minRentalDays: item.min_rental_days?.toString() || item.minRentalDays?.toString() || '1',
+        maxRentalDays: item.max_rental_days?.toString() || item.maxRentalDays?.toString() || '30',
+        terms: item.terms || '',
+        condition: item.condition || 'good',
+        brand: item.brand || '',
+        model: item.model || '',
+        year: item.year?.toString() || ''
       })
       
-      if (item.images) {
+      if (item.images && Array.isArray(item.images)) {
         setImages(item.images)
       }
     }
@@ -64,10 +75,31 @@ const ItemForm = ({
   useEffect(() => {
     const loadCategories = async () => {
       try {
+        setLoadingCategories(true)
+        console.log('Loading categories in ItemForm...')
         const response = await itemsAPI.getCategories()
-        setCategories(response.data || [])
+        console.log('Categories response in ItemForm:', response)
+        
+        // Обрабатываем ответ от API
+        const responseData = response.data
+        let categoriesData = []
+        
+        if (responseData.success !== false) {
+          if (Array.isArray(responseData.data)) {
+            categoriesData = responseData.data
+          } else if (Array.isArray(responseData)) {
+            categoriesData = responseData
+          }
+        }
+        
+        console.log('Processed categories in ItemForm:', categoriesData)
+        setCategories(categoriesData)
       } catch (error) {
         console.error('Error loading categories:', error)
+        toast.error('Ошибка загрузки категорий')
+        setCategories([])
+      } finally {
+        setLoadingCategories(false)
       }
     }
     
@@ -101,19 +133,24 @@ const ItemForm = ({
       const error = validateImage(file, 5) // 5MB лимит
       if (error) {
         newErrors[`image_${index}`] = error
+        toast.error(`Файл ${file.name}: ${error}`)
       } else {
         validFiles.push(file)
       }
     })
     
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(prev => ({ ...prev, ...newErrors }))
+    if (validFiles.length === 0) {
+      return
+    }
+    
+    // Проверяем общее количество изображений
+    if (images.length + validFiles.length > 10) {
+      toast.error('Максимально можно загрузить 10 изображений')
       return
     }
     
     // Добавляем новые файлы
-    const newImageFiles = [...imageFiles, ...validFiles]
-    setImageFiles(newImageFiles)
+    setImageFiles(prev => [...prev, ...validFiles])
     
     // Создаем превью
     validFiles.forEach(file => {
@@ -123,6 +160,9 @@ const ItemForm = ({
       }
       reader.readAsDataURL(file)
     })
+    
+    // Очищаем input
+    e.target.value = ''
   }
 
   const removeImage = (index) => {
@@ -130,69 +170,69 @@ const ItemForm = ({
     setImageFiles(prev => prev.filter((_, i) => i !== index))
   }
 
-  const validateForm = () => {
-    const newErrors = {}
-    
-    // Валидация заголовка
-    const titleError = validateText(formData.title, 5, 100, 'Название')
-    if (titleError) newErrors.title = titleError
-    
-    // Валидация описания
-    const descriptionError = validateText(formData.description, 10, 2000, 'Описание')
-    if (descriptionError) newErrors.description = descriptionError
-    
-    // Валидация категории
-    if (!formData.category) {
-      newErrors.category = 'Выберите категорию'
+  const validateFormFields = () => {
+    const validationRules = {
+      title: [
+        (value) => validateText(value, 5, 200, 'Название')
+      ],
+      description: [
+        (value) => validateText(value, 10, 2000, 'Описание')
+      ],
+      category: [
+        (value) => !value ? 'Выберите категорию' : null
+      ],
+      pricePerDay: [
+        (value) => validatePrice(value, 0.001, 10000)
+      ],
+      deposit: [
+        (value) => value ? validatePrice(value, 0, 10000) : null
+      ],
+      availableFrom: [
+        (value) => value ? validateDate(value, 'Дата начала доступности') : null
+      ],
+      minRentalDays: [
+        (value) => {
+          const num = parseInt(value)
+          if (isNaN(num) || num < 1) return 'Минимальный срок не может быть меньше 1 дня'
+          return null
+        }
+      ],
+      maxRentalDays: [
+        (value) => {
+          const num = parseInt(value)
+          const minNum = parseInt(formData.minRentalDays)
+          if (isNaN(num) || num < 1) return 'Максимальный срок не может быть меньше 1 дня'
+          if (!isNaN(minNum) && num < minNum) return 'Максимальный срок не может быть меньше минимального'
+          return null
+        }
+      ]
     }
     
-    // Валидация цены
-    const priceError = validatePrice(formData.pricePerDay, 0.001, 10000)
-    if (priceError) newErrors.pricePerDay = priceError
-    
-    // Валидация залога
-    if (formData.deposit) {
-      const depositError = validatePrice(formData.deposit, 0, 10000)
-      if (depositError) newErrors.deposit = depositError
-    }
-    
-    // Валидация дат
-    if (formData.availableFrom) {
-      const dateError = validateDate(formData.availableFrom, 'Дата начала доступности')
-      if (dateError) newErrors.availableFrom = dateError
-    }
-    
+    // Проверяем даты
     if (formData.availableTo && formData.availableFrom) {
       if (new Date(formData.availableTo) <= new Date(formData.availableFrom)) {
-        newErrors.availableTo = 'Дата окончания должна быть позже даты начала'
+        validationRules.availableTo = [() => 'Дата окончания должна быть позже даты начала']
       }
     }
     
-    // Валидация минимального и максимального срока аренды
-    const minDays = parseInt(formData.minRentalDays)
-    const maxDays = parseInt(formData.maxRentalDays)
+    const { isValid, errors: validationErrors } = validateFormData(formData, validationRules)
     
-    if (minDays < 1) {
-      newErrors.minRentalDays = 'Минимальный срок не может быть меньше 1 дня'
-    }
-    
-    if (maxDays < minDays) {
-      newErrors.maxRentalDays = 'Максимальный срок не может быть меньше минимального'
-    }
-    
-    // Проверяем наличие изображений
+    // Добавляем ошибку изображений если есть
     if (images.length === 0) {
-      newErrors.images = 'Добавьте хотя бы одно изображение'
+      validationErrors.images = 'Добавьте хотя бы одно изображение'
     }
     
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    setErrors(validationErrors)
+    return isValid && images.length > 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!validateForm()) return
+    if (!validateFormFields()) {
+      toast.error('Пожалуйста, исправьте ошибки в форме')
+      return
+    }
     
     // Подготавливаем данные для отправки
     const submitData = {
@@ -201,11 +241,21 @@ const ItemForm = ({
       deposit: formData.deposit ? parseFloat(formData.deposit) : 0,
       minRentalDays: parseInt(formData.minRentalDays),
       maxRentalDays: parseInt(formData.maxRentalDays),
+      year: formData.year ? parseInt(formData.year) : null,
       images: imageFiles
     }
     
+    console.log('Form submit data:', submitData)
     onSubmit?.(submitData)
   }
+
+  const conditionOptions = [
+    { value: 'new', label: 'Новое' },
+    { value: 'like_new', label: 'Как новое' },
+    { value: 'good', label: 'Хорошее' },
+    { value: 'fair', label: 'Удовлетворительное' },
+    { value: 'poor', label: 'Плохое' }
+  ]
 
   return (
     <form onSubmit={handleSubmit} className={styles.itemForm}>
@@ -238,9 +288,12 @@ const ItemForm = ({
               onChange={handleInputChange}
               className={`${styles.select} ${errors.category ? styles.selectError : ''}`}
               required
+              disabled={loadingCategories}
             >
-              <option value="">Выберите категорию</option>
-              {categories.map(category => (
+              <option value="">
+                {loadingCategories ? 'Загрузка...' : 'Выберите категорию'}
+              </option>
+              {Array.isArray(categories) && categories.map(category => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
@@ -313,7 +366,7 @@ const ItemForm = ({
           )}
           
           <p className={styles.uploadHint}>
-            Максимум 10 фотографий. Форматы: JPG, PNG, WebP. Размер до 5MB.
+            Максимум 10 фотографий. Форматы: JPG, PNG, WebP. Размер до 5MB каждое.
           </p>
         </div>
       </Card>
@@ -373,6 +426,54 @@ const ItemForm = ({
             value={formData.maxRentalDays}
             onChange={handleInputChange}
             error={errors.maxRentalDays}
+            fullWidth
+          />
+        </div>
+        
+        <div className={styles.formGrid}>
+          <div className={styles.selectGroup}>
+            <label className={styles.selectLabel}>Состояние</label>
+            <select
+              name="condition"
+              value={formData.condition}
+              onChange={handleInputChange}
+              className={styles.select}
+            >
+              {conditionOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <Input
+            label="Бренд"
+            name="brand"
+            value={formData.brand}
+            onChange={handleInputChange}
+            placeholder="Apple, Samsung..."
+            fullWidth
+          />
+          
+          <Input
+            label="Модель"
+            name="model"
+            value={formData.model}
+            onChange={handleInputChange}
+            placeholder="iPhone 15, Galaxy S24..."
+            fullWidth
+          />
+          
+          <Input
+            label="Год выпуска"
+            name="year"
+            type="number"
+            min="1900"
+            max={new Date().getFullYear()}
+            value={formData.year}
+            onChange={handleInputChange}
+            placeholder="2024"
             fullWidth
           />
         </div>
@@ -462,6 +563,7 @@ const ItemForm = ({
           type="submit"
           variant="primary"
           loading={isLoading}
+          disabled={isLoading}
         >
           {item ? 'Обновить товар' : 'Создать товар'}
         </Button>

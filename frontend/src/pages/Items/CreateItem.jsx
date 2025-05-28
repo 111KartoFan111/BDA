@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/UI/Button/Button'
 import ItemForm from '../../components/Forms/ItemForm/ItemForm'
 import Modal from '../../components/UI/Modal/Modal'
+import toast from 'react-hot-toast'
 import styles from './Items.module.css'
 
 const CreateItem = () => {
@@ -26,43 +27,58 @@ const CreateItem = () => {
     setIsLoading(true)
     
     try {
+      console.log('Submitting item data:', formData)
+      
       // Создаем товар
-      const response = await itemsAPI.createItem({
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        pricePerDay: formData.pricePerDay,
-        deposit: formData.deposit,
-        location: formData.location,
-        availableFrom: formData.availableFrom,
-        availableTo: formData.availableTo,
-        minRentalDays: formData.minRentalDays,
-        maxRentalDays: formData.maxRentalDays,
-        terms: formData.terms
-      })
-
-      const newItem = response.data
+      const response = await itemsAPI.createItem(formData)
+      console.log('Create item response:', response)
+      
+      const newItem = response.data.data || response.data
+      
+      if (!newItem || !newItem.id) {
+        throw new Error('Некорректный ответ сервера при создании товара')
+      }
 
       // Загружаем изображения если они есть
       if (formData.images && formData.images.length > 0) {
-        const imageFormData = new FormData()
-        formData.images.forEach((image, index) => {
-          imageFormData.append(`images`, image)
-        })
-
         try {
-          await itemsAPI.uploadImages(newItem.id, imageFormData)
+          const imageFormData = new FormData()
+          formData.images.forEach((image, index) => {
+            imageFormData.append(`images`, image)
+          })
+
+          console.log('Uploading images for item:', newItem.id)
+          const imageResponse = await itemsAPI.uploadImages(newItem.id, imageFormData)
+          console.log('Image upload response:', imageResponse)
         } catch (imageError) {
           console.error('Error uploading images:', imageError)
-          // Продолжаем даже если изображения не загрузились
+          toast.error('Товар создан, но изображения не удалось загрузить')
         }
       }
 
       setCreatedItem(newItem)
       setIsSuccessModalOpen(true)
+      toast.success('Товар успешно создан!')
+      
     } catch (error) {
       console.error('Error creating item:', error)
-      // Ошибка уже обработана в useAuth через toast
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.detail ||
+                          error.message || 
+                          'Ошибка при создании товара'
+      
+      toast.error(errorMessage)
+      
+      // Если это ошибки валидации, показываем их подробнее
+      if (error.response?.status === 422 && error.response?.data?.details) {
+        const validationErrors = error.response.data.details
+        if (Array.isArray(validationErrors)) {
+          validationErrors.forEach(err => {
+            toast.error(`${err.loc?.[1] || 'Поле'}: ${err.msg}`)
+          })
+        }
+      }
     } finally {
       setIsLoading(false)
     }
@@ -91,6 +107,7 @@ const CreateItem = () => {
     setIsSuccessModalOpen(false)
     setCreatedItem(null)
     // Остаемся на странице создания
+    window.location.reload() // Простой способ очистить форму
   }
 
   return (
