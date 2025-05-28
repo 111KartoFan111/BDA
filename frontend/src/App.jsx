@@ -27,6 +27,7 @@ import ContractsList from './pages/Contracts/ContractsList'
 import ContractDetail from './pages/Contracts/ContractDetail'
 import Profile from './pages/Profile/Profile'
 import Analytics from './pages/Analytics/Analytics'
+import AdminPanel from './pages/Admin/AdminPage'
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
@@ -128,6 +129,13 @@ function App() {
                   <Route path="/analytics" element={
                     <ProtectedRoute requiredRole="admin">
                       <Analytics />
+                      
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/admin" element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminPanel />
                     </ProtectedRoute>
                   } />
                   

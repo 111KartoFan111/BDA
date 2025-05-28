@@ -51,7 +51,8 @@ const Header = () => {
     { path: '/', label: 'Главная', public: true },
     { path: '/items', label: 'Товары', public: true },
     { path: '/contracts', label: 'Контракты', requireAuth: true },
-    { path: '/analytics', label: 'Аналитика', adminOnly: true }
+    { path: '/analytics', label: 'Аналитика', adminOnly: true },
+    { path: '/admin', label: 'Настройки', adminOnly: true }
   ]
 
   const filteredNavItems = navigationItems.filter(item => {
@@ -247,6 +248,7 @@ const Header = () => {
                     <User size={16} />
                     Профиль
                   </Link>
+
                   <Link
                     to="/settings"
                     className={styles.mobileNavLink}

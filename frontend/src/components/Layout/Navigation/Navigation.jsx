@@ -38,6 +38,11 @@ const Navigation = ({ variant = 'horizontal' }) => {
       path: '/analytics',
       adminOnly: true
     },
+    { icon: <User size={20} />,
+      label: 'Администрирование',
+      path: '/admin',
+      adminOnly: true
+    },
     {
       icon: <User size={20} />,
       label: 'Профиль',

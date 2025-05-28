@@ -74,7 +74,14 @@ const Sidebar = ({ isOpen, onToggle }) => {
       label: 'Аналитика',
       path: '/analytics',
       adminOnly: true
+    },
+    {
+      icon: <User size={20} />,
+      label: 'Администрирование',
+      path: '/admin',
+      adminOnly: true
     }
+
   ]
 
   const userMenuItems = [
