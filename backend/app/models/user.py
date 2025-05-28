@@ -22,6 +22,7 @@ class UserRole(str, enum.Enum):
     MODERATOR = "moderator"
 
 
+
 class UserStatus(str, enum.Enum):
     """User status."""
     ACTIVE = "active"

@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     PROJECT_VERSION: str = "1.0.0"
     DESCRIPTION: str = "Backend API for RentChain rental platform"
     
+    
     # Environment
     ENVIRONMENT: str = "development"
     DEBUG: bool = True

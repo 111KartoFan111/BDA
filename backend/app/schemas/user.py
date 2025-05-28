@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any
 from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
 from datetime import datetime
 import uuid
+from uuid import UUID
 
 from app.models.user import UserRole, UserStatus
 
@@ -183,3 +184,10 @@ class UserPrivacySettings(BaseModel):
     show_phone: bool = False
     show_location: bool = True
     allow_messages: bool = True
+
+class UserOut(BaseModel):
+    id: UUID
+    email: EmailStr
+
+    class Config:
+        orm_mode = True

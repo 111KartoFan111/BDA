@@ -1,3 +1,4 @@
+// frontend/src/components/Forms/ItemForm/ItemForm.jsx
 import React, { useState, useEffect } from 'react'
 import { Upload, X, MapPin, Calendar, DollarSign, Package, FileText } from 'lucide-react'
 import { itemsAPI } from '../../../services/api/items'
@@ -173,7 +174,7 @@ const ItemForm = ({
   const validateFormFields = () => {
     const validationRules = {
       title: [
-        (value) => validateText(value, 5, 200, 'Название')
+        (value) => validateText(value, 3, 100, 'Название')
       ],
       description: [
         (value) => validateText(value, 10, 2000, 'Описание')
@@ -185,7 +186,7 @@ const ItemForm = ({
         (value) => validatePrice(value, 0.001, 10000)
       ],
       deposit: [
-        (value) => value ? validatePrice(value, 0, 10000) : null
+        (value) => value && value !== '0' ? validatePrice(value, 0, 10000) : null
       ],
       availableFrom: [
         (value) => value ? validateDate(value, 'Дата начала доступности') : null
@@ -217,13 +218,13 @@ const ItemForm = ({
     
     const { isValid, errors: validationErrors } = validateFormData(formData, validationRules)
     
-    // Добавляем ошибку изображений если есть
-    if (images.length === 0) {
+    // Добавляем ошибку изображений если нет изображений для нового товара
+    if (!item && images.length === 0) {
       validationErrors.images = 'Добавьте хотя бы одно изображение'
     }
     
     setErrors(validationErrors)
-    return isValid && images.length > 0
+    return isValid && (item || images.length > 0)
   }
 
   const handleSubmit = async (e) => {
@@ -236,11 +237,20 @@ const ItemForm = ({
     
     // Подготавливаем данные для отправки
     const submitData = {
-      ...formData,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      category: formData.category, // Используем category вместо category_id для фронтенда
       pricePerDay: parseFloat(formData.pricePerDay),
       deposit: formData.deposit ? parseFloat(formData.deposit) : 0,
+      location: formData.location?.trim() || null,
+      availableFrom: formData.availableFrom || null,
+      availableTo: formData.availableTo || null,
       minRentalDays: parseInt(formData.minRentalDays),
       maxRentalDays: parseInt(formData.maxRentalDays),
+      terms: formData.terms?.trim() || null,
+      condition: formData.condition,
+      brand: formData.brand?.trim() || null,
+      model: formData.model?.trim() || null,
       year: formData.year ? parseInt(formData.year) : null,
       images: imageFiles
     }

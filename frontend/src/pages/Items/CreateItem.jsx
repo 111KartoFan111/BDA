@@ -1,3 +1,4 @@
+// frontend/src/pages/Items/CreateItem.jsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
@@ -29,27 +30,48 @@ const CreateItem = () => {
     try {
       console.log('Submitting item data:', formData)
       
-      // Создаем товар
-      const response = await itemsAPI.createItem(formData)
+      // Создаем товар БЕЗ изображений
+      const itemDataWithoutImages = { ...formData }
+      delete itemDataWithoutImages.images // Удаляем изображения из основных данных
+      
+      console.log('Item data for creation:', itemDataWithoutImages)
+      
+      const response = await itemsAPI.createItem(itemDataWithoutImages)
       console.log('Create item response:', response)
       
-      const newItem = response.data.data || response.data
+      // Извлекаем данные товара из ответа
+      let newItem = response.data
+      if (response.data.data) {
+        newItem = response.data.data
+      } else if (response.data.success) {
+        newItem = response.data.data || response.data
+      }
       
       if (!newItem || !newItem.id) {
+        console.error('Invalid response structure:', response.data)
         throw new Error('Некорректный ответ сервера при создании товара')
       }
+
+      console.log('Created item:', newItem)
 
       // Загружаем изображения если они есть
       if (formData.images && formData.images.length > 0) {
         try {
+          console.log('Uploading images for item:', newItem.id)
+          console.log('Images to upload:', formData.images)
+          
           const imageFormData = new FormData()
           formData.images.forEach((image, index) => {
-            imageFormData.append(`images`, image)
+            imageFormData.append('files', image) // Используем 'files' как ожидает бэкенд
           })
 
-          console.log('Uploading images for item:', newItem.id)
           const imageResponse = await itemsAPI.uploadImages(newItem.id, imageFormData)
           console.log('Image upload response:', imageResponse)
+          
+          // Обновляем данные товара с URL изображений
+          if (imageResponse.data && imageResponse.data.data) {
+            newItem.images = imageResponse.data.data
+          }
         } catch (imageError) {
           console.error('Error uploading images:', imageError)
           toast.error('Товар создан, но изображения не удалось загрузить')
@@ -63,22 +85,33 @@ const CreateItem = () => {
     } catch (error) {
       console.error('Error creating item:', error)
       
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.detail ||
-                          error.message || 
-                          'Ошибка при создании товара'
+      // Более детальная обработка ошибок
+      let errorMessage = 'Ошибка при создании товара'
+      
+      if (error.response?.status === 422) {
+        console.error('Validation error details:', error.response.data)
+        
+        if (error.response.data?.details) {
+          const validationErrors = error.response.data.details
+          if (Array.isArray(validationErrors)) {
+            const errorMessages = validationErrors.map(err => {
+              const field = err.loc?.slice(-1)[0] || 'поле'
+              return `${field}: ${err.msg}`
+            })
+            errorMessage = `Ошибки валидации: ${errorMessages.join(', ')}`
+          }
+        } else if (error.response.data?.message) {
+          errorMessage = error.response.data.message
+        }
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error.message) {
+        errorMessage = error.message
+      }
       
       toast.error(errorMessage)
-      
-      // Если это ошибки валидации, показываем их подробнее
-      if (error.response?.status === 422 && error.response?.data?.details) {
-        const validationErrors = error.response.data.details
-        if (Array.isArray(validationErrors)) {
-          validationErrors.forEach(err => {
-            toast.error(`${err.loc?.[1] || 'Поле'}: ${err.msg}`)
-          })
-        }
-      }
     } finally {
       setIsLoading(false)
     }

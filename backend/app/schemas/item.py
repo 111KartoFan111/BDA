@@ -3,10 +3,13 @@ Item schemas for request/response validation.
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, field_validator, ConfigDict
+from pydantic import BaseModel, field_validator, ConfigDict,Field
 from datetime import datetime
 from decimal import Decimal
 import uuid
+from uuid import UUID
+
+from app.schemas.user import UserOut
 
 from app.models.item import ItemStatus, ItemCondition
 
@@ -276,6 +279,25 @@ class RentalRequest(BaseModel):
     message: Optional[str] = None
     total_price: Decimal
 
+
+class ItemOut(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    owner: UserOut  # <-- ВАЖНО: используйте Pydantic модель
+
+    price_per_day: float
+    deposit: float
+    currency: str
+    available_from: Optional[datetime]
+    available_to: Optional[datetime]
+    is_available: bool
+
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+    class Config:
+        orm_mode = True
 
 # Forward reference resolution
 ItemDetail.model_rebuild()

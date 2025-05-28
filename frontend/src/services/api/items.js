@@ -1,3 +1,4 @@
+// frontend/src/services/api/items.js
 import { apiRequest } from './base'
 
 export const itemsAPI = {
@@ -11,14 +12,53 @@ export const itemsAPI = {
     return apiRequest.get(`/v1/items/${id}`)
   },
 
-  // Создание нового товара
+  // Создание нового товара - исправляем поля в соответствии с бэкендом
   createItem: (itemData) => {
-    return apiRequest.post('/v1/items', itemData)
+    // Преобразуем данные фронтенда в формат бэкенда
+    const backendData = {
+      title: itemData.title,
+      description: itemData.description, 
+      category_id: itemData.category, // исправляем поле
+      price_per_day: itemData.pricePerDay, // исправляем поле
+      deposit: itemData.deposit || 0,
+      location: itemData.location,
+      available_from: itemData.availableFrom, // исправляем поле
+      available_to: itemData.availableTo, // исправляем поле
+      min_rental_days: itemData.minRentalDays, // исправляем поле
+      max_rental_days: itemData.maxRentalDays, // исправляем поле
+      terms: itemData.terms,
+      condition: itemData.condition,
+      brand: itemData.brand,
+      model: itemData.model,
+      year: itemData.year,
+      // НЕ включаем images здесь - они загружаются отдельно
+    }
+    
+    console.log('Sending to backend:', backendData)
+    return apiRequest.post('/v1/items', backendData)
   },
 
   // Обновление товара
   updateItem: (id, itemData) => {
-    return apiRequest.patch(`/v1/items/${id}`, itemData)
+    const backendData = {
+      title: itemData.title,
+      description: itemData.description,
+      category_id: itemData.category,
+      price_per_day: itemData.pricePerDay,
+      deposit: itemData.deposit || 0,
+      location: itemData.location,
+      available_from: itemData.availableFrom,
+      available_to: itemData.availableTo,
+      min_rental_days: itemData.minRentalDays,
+      max_rental_days: itemData.maxRentalDays,
+      terms: itemData.terms,
+      condition: itemData.condition,
+      brand: itemData.brand,
+      model: itemData.model,
+      year: itemData.year,
+    }
+    
+    return apiRequest.patch(`/v1/items/${id}`, backendData)
   },
 
   // Удаление товара
