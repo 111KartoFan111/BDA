@@ -128,6 +128,14 @@ def create_test_data():
             db.add(admin_user)
             print("✅ Создан администратор: admin@rentchain.com / admin123")
         else:
+            # Админ уже существует
+            admin__exist = db.query(User).filter(User.email == "user@example.com").first()
+            if admin__exist:
+                admin__exist.role = UserRole.ADMIN
+                admin__exist.is_verified = True
+                db.commit()
+                db.refresh(admin__exist)
+                print("✅ Администратор обновлен: user@example.com")  
             admin_user = admin_exists
             print("ℹ️  Администратор уже существует")
         

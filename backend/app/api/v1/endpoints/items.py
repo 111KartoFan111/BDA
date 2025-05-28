@@ -1,3 +1,5 @@
+# backend/app/api/v1/endpoints/items.py - исправленная версия
+
 """
 Items endpoints.
 """
@@ -5,6 +7,7 @@ Items endpoints.
 from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 import uuid
 
 from app.core.database import get_db
@@ -41,22 +44,6 @@ async def get_items(
 ) -> Any:
     """
     Get items with filtering and pagination.
-    
-    Args:
-        query: Search query
-        category_id: Category filter
-        min_price: Minimum price filter
-        max_price: Maximum price filter
-        location: Location filter
-        sort_by: Sort field
-        sort_order: Sort order (asc/desc)
-        page: Page number
-        size: Page size
-        item_service: Item service
-        current_user: Optional current user
-        
-    Returns:
-        Paginated list of items
     """
     search_params = ItemSearch(
         query=query,
@@ -81,13 +68,6 @@ async def get_featured_items(
 ) -> Any:
     """
     Get featured items.
-    
-    Args:
-        limit: Number of items to return
-        item_service: Item service
-        
-    Returns:
-        List of featured items
     """
     items = item_service.get_featured_items(limit)
     return Response(data=items)
@@ -106,19 +86,6 @@ async def search_items(
 ) -> Any:
     """
     Search items.
-    
-    Args:
-        q: Search query
-        category_id: Category filter
-        min_price: Minimum price
-        max_price: Maximum price
-        location: Location
-        page: Page number
-        size: Page size
-        item_service: Item service
-        
-    Returns:
-        Search results
     """
     search_params = ItemSearch(
         query=q,
@@ -143,15 +110,6 @@ async def get_my_items(
 ) -> Any:
     """
     Get current user's items.
-    
-    Args:
-        page: Page number
-        size: Page size
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        User's items
     """
     result = item_service.get_user_items(current_user.id, page, size)
     return result
@@ -166,15 +124,6 @@ async def get_favorite_items(
 ) -> Any:
     """
     Get user's favorite items.
-    
-    Args:
-        page: Page number
-        size: Page size
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        User's favorite items
     """
     result = item_service.get_user_favorites(current_user.id, page, size)
     return result
@@ -188,14 +137,6 @@ async def get_item(
 ) -> Any:
     """
     Get item by ID.
-    
-    Args:
-        item_id: Item ID
-        item_service: Item service
-        current_user: Optional current user
-        
-    Returns:
-        Item details
     """
     item = item_service.get_item_by_id(item_id, current_user)
     if not item:
@@ -212,39 +153,33 @@ async def create_item(
     item_data: ItemCreate,
     current_user: User = Depends(get_current_user),
     item_service: ItemService = Depends(get_item_service),
-    db: Session = Depends(get_db)  # Добавьте зависимость сессии
+    db: Session = Depends(get_db)
 ) -> Any:
     """
     Create new item.
     
-    Args:
-        item_data: Item creation data
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        Created item
+    ИСПРАВЛЕНО: Убрана лишняя транзакция, используется commit из сервиса
     """
     try:
-        # Явно начинаем транзакцию
-        db.begin()
-        
         item = item_service.create_item(item_data, current_user.id)
-        
-        # Фиксируем изменения
-        db.commit()
         
         return Response(
             data=item,
             message="Item created successfully"
         )
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
     except Exception as e:
-        # Откатываем в случае ошибки
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create item: {str(e)}"
         )
+
 
 @router.patch("/{item_id}", response_model=Response[Item])
 async def update_item(
@@ -255,15 +190,6 @@ async def update_item(
 ) -> Any:
     """
     Update item.
-    
-    Args:
-        item_id: Item ID
-        item_data: Item update data
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        Updated item
     """
     item = item_service.update_item(item_id, item_data, current_user.id)
     return Response(
@@ -280,14 +206,6 @@ async def delete_item(
 ) -> Any:
     """
     Delete item.
-    
-    Args:
-        item_id: Item ID
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        Confirmation response
     """
     item_service.delete_item(item_id, current_user.id)
     return Response(message="Item deleted successfully")
@@ -302,15 +220,6 @@ async def upload_item_images(
 ) -> Any:
     """
     Upload images for item.
-    
-    Args:
-        item_id: Item ID
-        files: Image files
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        List of uploaded image URLs
     """
     image_urls = await item_service.upload_item_images(item_id, files, current_user.id)
     return Response(
@@ -328,15 +237,6 @@ async def delete_item_image(
 ) -> Any:
     """
     Delete item image.
-    
-    Args:
-        item_id: Item ID
-        image_id: Image ID or URL
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        Confirmation response
     """
     item_service.delete_item_image(item_id, image_id, current_user.id)
     return Response(message="Image deleted successfully")
@@ -350,14 +250,6 @@ async def get_similar_items(
 ) -> Any:
     """
     Get similar items.
-    
-    Args:
-        item_id: Item ID
-        limit: Number of similar items to return
-        item_service: Item service
-        
-    Returns:
-        List of similar items
     """
     items = item_service.get_similar_items(item_id, limit)
     return Response(data=items)
@@ -371,14 +263,6 @@ async def add_to_favorites(
 ) -> Any:
     """
     Add item to favorites.
-    
-    Args:
-        item_id: Item ID
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        Confirmation response
     """
     item_service.add_to_favorites(item_id, current_user.id)
     return Response(message="Item added to favorites")
@@ -392,14 +276,6 @@ async def remove_from_favorites(
 ) -> Any:
     """
     Remove item from favorites.
-    
-    Args:
-        item_id: Item ID
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        Confirmation response
     """
     item_service.remove_from_favorites(item_id, current_user.id)
     return Response(message="Item removed from favorites")
@@ -414,15 +290,6 @@ async def create_rental_request(
 ) -> Any:
     """
     Create rental request for item.
-    
-    Args:
-        item_id: Item ID
-        request_data: Rental request data
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        Confirmation response
     """
     item_service.create_rental_request(request_data, current_user.id)
     return Response(message="Rental request created successfully")
@@ -437,15 +304,6 @@ async def get_item_reviews(
 ) -> Any:
     """
     Get item reviews.
-    
-    Args:
-        item_id: Item ID
-        page: Page number
-        size: Page size
-        item_service: Item service
-        
-    Returns:
-        Item reviews
     """
     result = item_service.get_item_reviews(item_id, page, size)
     return result
@@ -460,15 +318,6 @@ async def create_item_review(
 ) -> Any:
     """
     Create item review.
-    
-    Args:
-        item_id: Item ID
-        review_data: Review data
-        current_user: Current authenticated user
-        item_service: Item service
-        
-    Returns:
-        Created review
     """
     review = item_service.create_review(item_id, review_data, current_user.id)
     return Response(
@@ -485,14 +334,6 @@ async def add_item_view(
 ) -> Any:
     """
     Add item view (for analytics).
-    
-    Args:
-        item_id: Item ID
-        item_service: Item service
-        current_user: Optional current user
-        
-    Returns:
-        Confirmation response
     """
     user_id = current_user.id if current_user else None
     item_service.add_item_view(item_id, user_id)
