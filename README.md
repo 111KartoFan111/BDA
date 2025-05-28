@@ -11,4 +11,5 @@ npm run dev
 cd backend
 docker compose down -v
 docker compose up --build
+python3 myscript.py
 ```
