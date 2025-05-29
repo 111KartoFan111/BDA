@@ -46,27 +46,32 @@ const AdminPanel = () => {
     fetchDashboardStats()
   }, [])
 
-  const fetchDashboardStats = async () => {
-    try {
-      setLoading(true)
-      const response = await apiRequest.get('/v1/admin/dashboard')
-      const data = response.data.data
-      
-      setStats({
-        totalUsers: data.total_users || 0,
-        totalItems: data.total_items || 0,
-        pendingItems: data.pending_items || 0,
-        activeContracts: data.active_contracts || 0,
-        totalRevenue: data.total_revenue || 0,
-        disputedContracts: data.disputed_contracts || 0
-      })
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error)
-      toast.error('Ошибка загрузки статистики')
-    } finally {
-      setLoading(false)
-    }
+const fetchDashboardStats = async () => {
+  try {
+    setLoading(true)
+    const response = await apiRequest.get('/v1/admin/dashboard')
+    
+    // ВАЖНО: данные вложены в response.data.data
+    const data = response.data.data
+    
+    console.log('Raw dashboard data:', data) // Для отладки
+    
+    // Правильный маппинг в соответствии с структурой ответа
+    setStats({
+      totalUsers: data.totals?.users || 0,
+      totalItems: data.totals?.items || 0,
+      pendingItems: data.pending?.items || 0,
+      activeContracts: data.active?.contracts || 0,
+      totalRevenue: data.revenue?.last_30_days || 0,
+      disputedContracts: data.pending?.disputes || 0
+    })
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error)
+    toast.error('Ошибка загрузки статистики')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div className="min-h-screen bg-gray-50">

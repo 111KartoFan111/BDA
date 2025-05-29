@@ -16,43 +16,31 @@ const DashboardTab = ({ stats }) => {
           title="Общее количество пользователей"
           value={stats.totalUsers}
           icon={<Users className="text-blue-500" size={24} />}
-          change="+12%"
-          changeType="positive"
         />
         <StatCard
           title="Товары на модерации"
           value={stats.pendingItems}
           icon={<Package className="text-orange-500" size={24} />}
-          change="+5"
-          changeType="neutral"
         />
         <StatCard
           title="Активные контракты"
           value={stats.activeContracts}
           icon={<FileText className="text-green-500" size={24} />}
-          change="+8%"
-          changeType="positive"
         />
         <StatCard
           title="Общий доход (ETH)"
           value={stats.totalRevenue}
           icon={<DollarSign className="text-purple-500" size={24} />}
-          change="+15%"
-          changeType="positive"
         />
         <StatCard
           title="Спорные контракты"
           value={stats.disputedContracts}
           icon={<AlertTriangle className="text-red-500" size={24} />}
-          change="-2"
-          changeType="positive"
         />
         <StatCard
           title="Всего товаров"
           value={stats.totalItems}
           icon={<Package className="text-indigo-500" size={24} />}
-          change="+23%"
-          changeType="positive"
         />
       </div>
 
