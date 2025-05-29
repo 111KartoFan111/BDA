@@ -6,6 +6,7 @@ from typing import List, Optional, Union
 from pydantic import AnyHttpUrl, field_validator, Field
 from pydantic_settings import BaseSettings
 import secrets
+import os
 
 
 class Settings(BaseSettings):
@@ -148,6 +149,30 @@ class Settings(BaseSettings):
     
     # Frontend URL
     FRONTEND_URL: str = "http://localhost:5173"
+    
+    # ML and Pricing Model Settings
+    MODEL_PATH: str = os.getenv("MODEL_PATH", "models")
+    ML_MODELS_ENABLED: bool = os.getenv("ML_MODELS_ENABLED", "true").lower() == "true"
+    
+    # Dynamic Pricing Configuration
+    PRICING_UPDATE_FREQUENCY_HOURS: int = int(os.getenv("PRICING_UPDATE_FREQUENCY_HOURS", "24"))
+    PRICING_MAX_AUTO_ADJUSTMENT: float = float(os.getenv("PRICING_MAX_AUTO_ADJUSTMENT", "0.2"))
+    PRICING_MIN_CONFIDENCE_THRESHOLD: float = float(os.getenv("PRICING_MIN_CONFIDENCE_THRESHOLD", "0.7"))
+    PRICING_NOTIFICATION_THRESHOLD: float = float(os.getenv("PRICING_NOTIFICATION_THRESHOLD", "0.1"))
+    
+    # Celery Configuration for Background Tasks
+    CELERY_BROKER_URL: Optional[str] = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+    CELERY_RESULT_BACKEND: Optional[str] = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+    CELERY_TASK_SERIALIZER: str = "json"
+    CELERY_RESULT_SERIALIZER: str = "json"
+    CELERY_ACCEPT_CONTENT: List[str] = ["json"]
+    CELERY_TIMEZONE: str = "UTC"
+    CELERY_ENABLE_UTC: bool = True
+    
+    # Machine Learning Model Configuration
+    ML_TRAINING_MIN_SAMPLES: int = int(os.getenv("ML_TRAINING_MIN_SAMPLES", "100"))
+    ML_MODEL_UPDATE_FREQUENCY_DAYS: int = int(os.getenv("ML_MODEL_UPDATE_FREQUENCY_DAYS", "7"))
+    ML_FEATURE_CACHE_TTL: int = int(os.getenv("ML_FEATURE_CACHE_TTL", "3600"))  # 1 hour
     
     class Config:
         env_file = ".env"
