@@ -11,7 +11,9 @@ module.exports = {
     sepolia: {
       provider: () => new HDWalletProvider(
         process.env.MNEMONIC,
-        `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
+        `https://eth-sepolia.g.alchemy.com/v2/${process.env.INFURA_PROJECT_ID}`
+
+
       ),
       network_id: 11155111,       // Sepolia network ID
       gas: 5500000,               // Gas limit

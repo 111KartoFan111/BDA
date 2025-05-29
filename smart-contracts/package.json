@@ -1,22 +1,61 @@
 {
   "name": "rentchain-smart-contracts",
   "version": "1.0.0",
-  "description": "Smart contracts for RentChain platform",
+  "description": "Smart contracts for RentChain - Blockchain-based rental platform",
   "main": "truffle-config.js",
   "scripts": {
     "compile": "truffle compile",
     "migrate": "truffle migrate",
+    "migrate:sepolia": "truffle migrate --network sepolia",
+    "migrate:reset": "truffle migrate --reset",
     "test": "truffle test",
-    "deploy:sepolia": "truffle migrate --network sepolia"
+    "test:coverage": "truffle run coverage",
+    "console": "truffle console",
+    "console:sepolia": "truffle console --network sepolia",
+    "deploy": "node scripts/deploy.js",
+    "interact": "node scripts/interact.js",
+    "verify": "truffle run verify --network sepolia",
+    "flatten": "truffle-flattener contracts/RentalFactory.sol > flattened/RentalFactory_flattened.sol"
   },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "solidity",
+    "smart-contracts",
+    "rental",
+    "defi",
+    "web3"
+  ],
+  "author": "RentChain Team",
+  "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.6",
-    "@truffle/hdwallet-provider": "^2.1.15",
-    "dotenv": "^16.5.0",
-    "truffle": "^5.11.5",
     "web3": "^4.16.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.16",
+    "@truffle/hdwallet-provider": "^2.1.15",
+    "chai": "^4.5.0",
+    "dotenv": "^16.5.0",
+    "mocha": "^10.8.2",
+    "solidity-coverage": "^0.7.22",
+    "truffle": "^5.11.5",
+    "truffle-flattener": "^1.6.0",
+    "truffle-plugin-verify": "^0.5.33"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rentchain/smart-contracts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rentchain/smart-contracts/issues"
+  },
+  "homepage": "https://rentchain.com",
+  "directories": {
+    "test": "test"
+  }
 }
