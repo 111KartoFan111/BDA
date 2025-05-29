@@ -51,8 +51,7 @@ const Header = () => {
     { path: '/', label: 'Главная', public: true },
     { path: '/items', label: 'Товары', public: true },
     { path: '/contracts', label: 'Контракты', requireAuth: true },
-    { path: '/analytics', label: 'Аналитика', adminOnly: true },
-    { path: '/admin', label: 'Настройки', adminOnly: true }
+    { path: '/admin', label: 'Управление', adminOnly: true }
   ]
 
   const filteredNavItems = navigationItems.filter(item => {
@@ -99,33 +98,8 @@ const Header = () => {
             >
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
-
-            {/* Web3 кошелек */}
-            <div className={styles.walletSection}>
-              {isConnected ? (
-                <div className={styles.walletInfo}>
-                  <div className={styles.walletBalance}>
-                    {parseFloat(balance).toFixed(4)} ETH
-                  </div>
-                  <button className={styles.walletButton}>
-                    <Wallet size={16} />
-                    {formatWalletAddress(account)}
-                  </button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="small"
-                  onClick={connectWallet}
-                  icon={<Wallet size={16} />}
-                >
-                  Подключить кошелек
-                </Button>
-              )}
-            </div>
-
             {/* Аутентификация */}
-            {isAuthenticated ? (
+            {isAuthenticated ? (              
               <div className={styles.profileSection}>
                 {/* Кнопка создания товара */}
                 <Link to="/items/create">
@@ -138,6 +112,30 @@ const Header = () => {
                     Создать
                   </Button>
                 </Link>
+
+              {/* Web3 кошелек */}
+              <div className={styles.walletSection}>
+                {isConnected ? (
+                  <div className={styles.walletInfo}>
+                    <div className={styles.walletBalance}>
+                      {parseFloat(balance).toFixed(4)} ETH
+                    </div>
+                    <button className={styles.walletButton}>
+                      <Wallet size={16} />
+                      {formatWalletAddress(account)}
+                    </button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="small"
+                    onClick={connectWallet}
+                    icon={<Wallet size={16} />}
+                  >
+                    Подключить кошелек
+                  </Button>
+                )}
+              </div>
 
                 {/* Профильное меню */}
                 <div className={styles.profileMenu}>

@@ -500,22 +500,22 @@ const ItemForm = ({
           <Input
             label="Доступен с"
             name="availableFrom"
-            type="date"
-            value={formData.availableFrom}
+            value={formData.availableFrom ? new Date(formData.availableFrom).toISOString().slice(0, 10) + ' ' + new Date(formData.availableFrom).toISOString().slice(11, 16) : ''}
             onChange={handleInputChange}
             error={errors.availableFrom}
-            min={new Date().toISOString().split('T')[0]}
+            type="datetime-local"
+            min={new Date().toISOString().slice(0, 10) + ' ' + new Date().toISOString().slice(11, 16)}
             fullWidth
           />
           
           <Input
             label="Доступен до"
             name="availableTo"
-            type="date"
-            value={formData.availableTo}
+            type="datetime-local"
+            value={formData.availableTo ? new Date(formData.availableTo).toISOString().slice(0, 10) + ' ' + new Date(formData.availableTo).toISOString().slice(11, 16) : ''}
             onChange={handleInputChange}
             error={errors.availableTo}
-            min={formData.availableFrom || new Date().toISOString().split('T')[0]}
+            min={formData.availableFrom ? new Date(formData.availableFrom).toISOString().slice(0, 10) + ' ' + new Date(formData.availableFrom).toISOString().slice(11, 16) : new Date().toISOString().slice(0, 10) + ' ' + new Date().toISOString().slice(11, 16)}
             helperText="Опционально"
             fullWidth
           />

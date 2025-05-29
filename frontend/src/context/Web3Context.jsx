@@ -106,7 +106,7 @@ function web3Reducer(state, action) {
 // Получение названия сети по chainId
 const getNetworkName = (chainId) => {
   const networks = {
-    1: 'Ethereum Mainnet',
+    1: 'Sepolia Testnet',
     11155111: 'Sepolia Testnet',
     137: 'Polygon Mainnet',
     56: 'BSC Mainnet',
