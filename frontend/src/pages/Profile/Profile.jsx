@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { User, Mail, Phone, MapPin, Calendar, Edit, Camera, Save, X } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Calendar, Edit, Camera, Save, X, TrendingUp, Package, Star, DollarSign } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useWeb3 } from '../../context/Web3Context'
+import { useApi } from '../../hooks/useApi'
+import { usersAPI } from '../../services/api/users'
 import Button from '../../components/UI/Button/Button'
 import Input from '../../components/UI/Input/Input'
 import Card from '../../components/UI/Card/Card'
@@ -25,6 +27,44 @@ const Profile = () => {
   })
   const [errors, setErrors] = useState({})
 
+  // Загрузка статистики пользователя
+  const { 
+    data: statsResponse, 
+    loading: statsLoading, 
+    error: statsError, 
+    refresh: refreshStats 
+  } = useApi(
+    usersAPI.getCurrentUserStats,
+    [],
+    { 
+      immediate: !!user,
+      defaultValue: {
+        data: {
+          total_items: 0,
+          active_items: 0,
+          total_contracts: 0,
+          active_contracts: 0,
+          completed_contracts: 0,
+          total_earnings: 0.0,
+          average_rating: null,
+          total_reviews: 0
+        }
+      }
+    }
+  )
+
+  // Извлекаем данные из ответа API
+  const userStats = statsResponse?.data || {
+    total_items: 0,
+    active_items: 0,
+    total_contracts: 0,
+    active_contracts: 0,
+    completed_contracts: 0,
+    total_earnings: 0.0,
+    average_rating: null,
+    total_reviews: 0
+  }
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -37,6 +77,19 @@ const Profile = () => {
       })
     }
   }, [user])
+
+  // Обновляем статистику при изменении пользователя
+  useEffect(() => {
+    if (user) {
+      refreshStats()
+    }
+  }, [user, refreshStats])
+
+  // Отладочная информация
+  useEffect(() => {
+    console.log('Stats Response:', statsResponse)
+    console.log('User Stats:', userStats)
+  }, [statsResponse, userStats])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -80,6 +133,8 @@ const Profile = () => {
     const result = await updateProfile(formData)
     if (result.success) {
       setIsEditing(false)
+      // Обновляем статистику после сохранения профиля
+      refreshStats()
     }
   }
 
@@ -105,11 +160,45 @@ const Profile = () => {
     }
   }
 
+  // Формируем статистику для отображения
   const stats = [
-    { label: 'Размещено товаров', value: user?.itemsCount || 0 },
-    { label: 'Завершено сделок', value: user?.completedDeals || 0 },
-    { label: 'Рейтинг', value: user?.rating ? `${user.rating}/5` : 'Нет оценок' },
-    { label: 'На платформе с', value: user?.createdAt ? formatDate(user.createdAt, 'MMMM yyyy') : '' }
+    { 
+      label: 'Всего товаров', 
+      value: userStats?.total_items || 0,
+      icon: <Package size={20} />,
+      color: '#3b82f6'
+    },
+    { 
+      label: 'Активных товаров', 
+      value: userStats?.active_items || 0,
+      icon: <TrendingUp size={20} />,
+      color: '#10b981'
+    },
+    { 
+      label: 'Завершено сделок', 
+      value: userStats?.completed_contracts || 0,
+      icon: <DollarSign size={20} />,
+      color: '#f59e0b'
+    },
+    { 
+      label: 'Рейтинг', 
+      value: userStats?.average_rating ? `${userStats.average_rating.toFixed(1)}/5` : 'Нет оценок',
+      icon: <Star size={20} />,
+      color: '#ef4444',
+      subtitle: userStats?.total_reviews ? `${userStats.total_reviews} отзывов` : null
+    },
+    { 
+      label: 'Общий доход', 
+      value: `${userStats?.total_earnings || 0} ETH`,
+      icon: <DollarSign size={20} />,
+      color: '#8b5cf6'
+    },
+    { 
+      label: 'На платформе с', 
+      value: user?.createdAt ? formatDate(user.createdAt, 'MMMM yyyy') : '',
+      icon: <Calendar size={20} />,
+      color: '#6b7280'
+    }
   ]
 
   return (
@@ -303,15 +392,48 @@ const Profile = () => {
 
           {/* Статистика */}
           <Card className={styles.statsCard}>
-            <h2 className={styles.cardTitle}>Статистика</h2>
-            <div className={styles.statsGrid}>
-              {stats.map((stat, index) => (
-                <div key={index} className={styles.statItem}>
-                  <div className={styles.statValue}>{stat.value}</div>
-                  <div className={styles.statLabel}>{stat.label}</div>
-                </div>
-              ))}
+            <div className={styles.statsHeader}>
+              <h2 className={styles.cardTitle}>Статистика</h2>
+              <Button 
+                variant="ghost" 
+                size="small" 
+                onClick={refreshStats}
+                loading={statsLoading}
+              >
+                Обновить
+              </Button>
             </div>
+            
+            {statsError ? (
+              <div className={styles.statsError}>
+                <p>Ошибка загрузки статистики: {statsError}</p>
+                <Button variant="outline" size="small" onClick={refreshStats}>
+                  Попробовать снова
+                </Button>
+              </div>
+            ) : (
+              <div className={styles.statsGrid}>
+                {stats.map((stat, index) => (
+                  <div key={index} className={styles.statItem}>
+                    <div className={styles.statIcon} style={{ color: stat.color }}>
+                      {stat.icon}
+                    </div>
+                    <div className={styles.statContent}>
+                      <div className={styles.statValue}>{stat.value}</div>
+                      <div className={styles.statLabel}>{stat.label}</div>
+                      {stat.subtitle && (
+                        <div className={styles.statSubtitle}>{stat.subtitle}</div>
+                      )}
+                    </div>
+                    {statsLoading && (
+                      <div className={styles.statLoader}>
+                        <div className={styles.skeleton}></div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
 

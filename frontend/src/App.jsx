@@ -28,6 +28,7 @@ import ContractDetail from './pages/Contracts/ContractDetail'
 import Profile from './pages/Profile/Profile'
 import Analytics from './pages/Analytics/Analytics'
 import AdminPanel from './pages/Admin/AdminPage'
+import MyItems from './pages/Profile/MyItems'
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
@@ -122,6 +123,12 @@ function App() {
                   <Route path="/profile" element={
                     <ProtectedRoute>
                       <Profile />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/myitems" element={
+                    <ProtectedRoute>
+                      <MyItems />
                     </ProtectedRoute>
                   } />
                   

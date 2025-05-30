@@ -54,8 +54,13 @@ export const usersAPI = {
   },
 
   // Получение статистики пользователя
-  getUserStats: (userId) => {
-    return apiRequest.get(`/users/${userId}/stats`)
+  getUserStats: () => {
+    return apiRequest.get(`v1/users/me/stats`)
+  },
+
+  // Получение статистики текущего пользователя
+  getCurrentUserStats: () => {
+    return apiRequest.get('/v1/users/me/stats')
   },
 
   // Подписка на пользователя
