@@ -167,12 +167,12 @@ const Header = () => {
                         Профиль
                       </Link>
                       <Link
-                        to="/settings"
+                        to="/myitems"
                         className={styles.dropdownItem}
                         onClick={() => setIsProfileDropdownOpen(false)}
                       >
                         <Settings size={16} />
-                        Настройки
+                        Мои обьявления
                       </Link>
                       <button
                         onClick={handleLogout}
@@ -187,13 +187,13 @@ const Header = () => {
               </div>
             ) : (
               <div className={styles.authButtons}>
-                <Link to="/login">
-                  <Button variant="outline" size="small">
+                <Link  to="/login">
+                  <Button className={styles.walletButton} variant="outline" size="small">
                     Войти
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button variant="primary" size="small">
+                  <Button className={styles.walletButton} variant="primary" size="small">
                     Регистрация
                   </Button>
                 </Link>
@@ -248,12 +248,12 @@ const Header = () => {
                   </Link>
 
                   <Link
-                    to="/settings"
+                    to="/myitems"
                     className={styles.mobileNavLink}
                     onClick={toggleMobileMenu}
                   >
                     <Settings size={16} />
-                    Настройки
+                    Мои обьявления
                   </Link>
                   <button
                     onClick={() => {

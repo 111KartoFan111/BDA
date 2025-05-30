@@ -175,6 +175,11 @@
   padding: var(--spacing-lg);
 }
 
+.walletButton{
+  color: #374151;
+}
+
+
 .cardTitle {
   font-size: 1.25rem;
   font-weight: 600;
@@ -358,6 +363,10 @@
 }
 
 [data-theme="dark"] .cardTitle {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .walletButton {
   color: #f9fafb;
 }
 

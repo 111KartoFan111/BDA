@@ -92,7 +92,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
     },
     {
       icon: <Settings size={20} />,
-      label: 'Настройки',
+      label: 'Мои обьявлени',
       path: '/settings'
     }
   ]

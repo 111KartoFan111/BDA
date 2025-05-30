@@ -64,6 +64,14 @@
   flex-wrap: wrap;
 }
 
+.walletButton{
+  color: #374151;
+}
+[data-theme="dark"] .walletButton {
+  color: #f9fafb;
+}
+
+
 .heroImage {
   display: flex;
   justify-content: center;
@@ -91,10 +99,13 @@
 .cardTitle {
   font-weight: 600;
   font-size: 1.125rem;
+  color: #1f2937;
 }
 
+
+
 .cardStatus {
-  background: var(--success-color);
+  background: green;
   color: white;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-md);
@@ -112,6 +123,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  color: #111827;
   padding: var(--spacing-sm);
   background: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-md);
@@ -428,10 +440,22 @@
   color: #d1d5db;
 }
 
+[data-theme="dark"] .cardTitle  {
+  color: #d1d5db;
+}
+
 [data-theme="dark"] .featured {
   background: #111827;
 }
 
+[data-theme="dark"] .cardStatus {
+  background: greenyellow;
+  color: #111827;
+}
+
+[data-theme="dark"] .cardItem{
+  color: #d1d5db;
+}
 [data-theme="dark"] .skeletonCard {
   background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
   background-size: 200% 100%;

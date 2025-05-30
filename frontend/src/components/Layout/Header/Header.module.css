@@ -35,7 +35,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: black;
 }
 
 .logoIcon svg {
@@ -455,4 +455,8 @@
 
 [data-theme="dark"] .mobileDivider {
   background-color: #374151;
+}
+
+[data-theme="dark"] .logoIcon {
+  color: white;
 }

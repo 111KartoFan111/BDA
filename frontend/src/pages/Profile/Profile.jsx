@@ -383,7 +383,7 @@ const Profile = () => {
                 <p className={styles.walletMessage}>
                   Подключите Web3 кошелек для работы со смарт-контрактами
                 </p>
-                <Button variant="primary" onClick={connectWallet}>
+                <Button className={styles.walletButton} variant="primary" onClick={connectWallet}>
                   Подключить кошелек
                 </Button>
               </div>

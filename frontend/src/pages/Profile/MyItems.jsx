@@ -49,35 +49,45 @@ const MyItems = () => {
     loadStats()
   }, [searchQuery, selectedStatus])
 
-  const loadMyItems = async () => {
+    const loadMyItems = async () => {
     try {
-      setLoading(true)
-      const params = {
+        setLoading(true)
+        const params = {
         search: searchQuery || undefined,
         status: selectedStatus || undefined
-      }
-      
-      const response = await itemsAPI.getMyItems(params)
-      console.log('My items response:', response)
-      
-      // Обрабатываем ответ от API
-      const responseData = response.data
-      let itemsData = []
-      
-      if (responseData.data && Array.isArray(responseData.data)) {
+        }
+        
+        const response = await itemsAPI.getMyItems(params)
+        console.log('My items response:', response)
+        
+        // Обрабатываем ответ от API
+        const responseData = response.data
+        let itemsData = []
+        
+        // Проверяем различные возможные структуры ответа
+        if (responseData.data && responseData.data.items && Array.isArray(responseData.data.items)) {
+        // Структура: response.data.data.items
+        itemsData = responseData.data.items
+        } else if (responseData.items && Array.isArray(responseData.items)) {
+        // Структура: response.data.items
+        itemsData = responseData.items
+        } else if (responseData.data && Array.isArray(responseData.data)) {
+        // Структура: response.data.data (массив)
         itemsData = responseData.data
-      } else if (Array.isArray(responseData)) {
+        } else if (Array.isArray(responseData)) {
+        // Структура: response.data (массив)
         itemsData = responseData
-      }
-      
-      setItems(itemsData)
+        }
+        
+        console.log('Processed items data:', itemsData) // Добавляем лог для отладки
+        setItems(itemsData)
     } catch (error) {
-      console.error('Error loading my items:', error)
-      setItems([])
+        console.error('Error loading my items:', error)
+        setItems([])
     } finally {
-      setLoading(false)
+        setLoading(false)
     }
-  }
+    }
 
   const loadStats = async () => {
     try {

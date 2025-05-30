@@ -77,6 +77,7 @@ const Home = () => {
                 {isAuthenticated ? (
                   <>
                     <Button
+                      className={styles.walletButton}
                       variant="primary"
                       size="large"
                       onClick={() => window.location.href = '/items/create'}
@@ -85,6 +86,7 @@ const Home = () => {
                       Разместить товар
                     </Button>
                     <Button
+                      className={styles.walletButton}
                       variant="outline"
                       size="large"
                       onClick={() => window.location.href = '/items'}
@@ -241,6 +243,7 @@ const Home = () => {
               {isAuthenticated ? (
                 <Button
                   variant="primary"
+                  className={styles.walletButton}
                   size="large"
                   onClick={() => window.location.href = '/items/create'}
                 >

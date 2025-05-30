@@ -1,0 +1,6 @@
+.walletButton{
+  color: #374151;
+}
+[data-theme="dark"] .walletButton {
+  color: #f9fafb;
+}

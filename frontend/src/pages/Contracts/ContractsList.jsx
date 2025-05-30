@@ -339,7 +339,7 @@ const ContractsList = () => {
               </p>
               <div className={styles.emptyActions}>
                 <Link to="/items">
-                  <Button variant="primary">
+                  <Button className={styles.walletButton} variant="primary">
                     Найти товары
                   </Button>
                 </Link>
