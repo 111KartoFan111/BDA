@@ -1,7 +1,7 @@
-require("dotenv").config(); 
 const Web3 = require('web3');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 // Load contract artifacts
 const RentalFactory = JSON.parse(
@@ -13,7 +13,7 @@ const RentalContract = JSON.parse(
 
 class ContractInteraction {
   constructor() {
-    this.web3 = new Web3(`https://eth-sepolia.g.alchemy.com/v2/sw-BMbGHGOkXWmcIQRs-jGvzi4IVNMN1`);
+    this.web3 = new Web3(`https://eth-sepolia.g.alchemy.com/v2/${process.env.INFURA_PROJECT_ID}`);
     this.account = this.web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
     this.web3.eth.accounts.wallet.add(this.account);
     
@@ -128,7 +128,7 @@ class ContractInteraction {
       ).send({
         from: this.account.address,
         value: rentalPrice,
-        gas: 300000
+        gas: 3000000
       });
 
       console.log('Transaction Hash:', tx.transactionHash);
@@ -188,7 +188,7 @@ class ContractInteraction {
       const tx = await contract.methods.payDeposit().send({
         from: this.account.address,
         value: info.deposit,
-        gas: 200000
+        gas: 300000
       });
 
       console.log('Deposit paid successfully!');
@@ -206,7 +206,7 @@ class ContractInteraction {
       
       const tx = await contract.methods.completeRental().send({
         from: this.account.address,
-        gas: 200000
+        gas: 300000
       });
 
       console.log('Rental completed successfully!');
@@ -224,7 +224,7 @@ class ContractInteraction {
       
       const tx = await contract.methods.cancelRental(reason).send({
         from: this.account.address,
-        gas: 200000
+        gas: 300000
       });
 
       console.log('Rental cancelled successfully!');

@@ -27,7 +27,7 @@ class PricingHistory(Base):
     
     # Дополнительные данные
     market_factors = Column(JSON, default=dict)
-    metadata = Column(JSON, default=dict)
+    price_metadata = Column(JSON, default=dict)
     
     # Временные метки
     created_at = Column(DateTime(timezone=True), server_default=func.now())

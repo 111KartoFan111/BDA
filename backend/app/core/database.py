@@ -48,8 +48,8 @@ def get_redis() -> redis.Redis:
 # Database utilities
 def init_db() -> None:
     """Initialize database tables."""
-    Base.metadata.create_all(bind=engine)
+    Base.price_metadata.create_all(bind=engine)
 
 def drop_db() -> None:
     """Drop all database tables."""
-    Base.metadata.drop_all(bind=engine)
+    Base.price_metadata.drop_all(bind=engine)
