@@ -98,6 +98,7 @@ const Home = () => {
                   <>
                     <Button
                       variant="primary"
+                      className={styles.walletButton}
                       size="large"
                       onClick={() => window.location.href = '/register'}
                       icon={<ArrowRight size={20} />}
@@ -105,6 +106,7 @@ const Home = () => {
                       Начать сейчас
                     </Button>
                     <Button
+                      className={styles.walletButton}
                       variant="outline"
                       size="large"
                       onClick={() => window.location.href = '/items'}

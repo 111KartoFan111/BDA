@@ -172,6 +172,8 @@
 
 .createButton {
   white-space: nowrap;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
 }
 
 /* Профильное меню */
@@ -267,6 +269,12 @@
   color: var(--primary-color);
   background-color: var(--primary-light);
 }
+
+[data-theme="dark"] .walletButton {
+  color: #f9fafb;
+}
+
+
 
 .mobileNav {
   position: absolute;

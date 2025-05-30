@@ -235,6 +235,7 @@ const Register = () => {
             size="large"
             fullWidth
             loading={isLoading}
+            className={styles.authButton}
           >
             Зарегистрироваться
           </Button>

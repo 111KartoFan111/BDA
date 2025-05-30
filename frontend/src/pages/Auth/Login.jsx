@@ -122,6 +122,7 @@ const Login = () => {
             size="large"
             fullWidth
             loading={isLoading}
+            className={styles.authButton}
           >
             Войти
           </Button>
@@ -134,20 +135,6 @@ const Login = () => {
               Зарегистрироваться
             </Link>
           </p>
-        </div>
-
-        <div className={styles.divider}>
-          <span>или</span>
-        </div>
-
-        <div className={styles.demoSection}>
-          <p className={styles.demoText}>
-            Попробуйте демо-аккаунт:
-          </p>
-          <div className={styles.demoCredentials}>
-            <span>Email: demo@rentchain.com</span>
-            <span>Пароль: demo123</span>
-          </div>
         </div>
       </div>
     </div>

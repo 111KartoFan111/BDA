@@ -1,7 +1,7 @@
+require("dotenv").config(); 
 const Web3 = require('web3');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
 
 // Load contract artifacts
 const RentalFactory = JSON.parse(
@@ -13,7 +13,7 @@ const RentalContract = JSON.parse(
 
 class ContractInteraction {
   constructor() {
-    this.web3 = new Web3(`https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`);
+    this.web3 = new Web3(`https://eth-sepolia.g.alchemy.com/v2/sw-BMbGHGOkXWmcIQRs-jGvzi4IVNMN1`);
     this.account = this.web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
     this.web3.eth.accounts.wallet.add(this.account);
     

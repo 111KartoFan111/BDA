@@ -30,7 +30,7 @@
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.6",
-    "web3": "^4.16.0"
+    "web3": "^1.10.0"
   },
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.16",

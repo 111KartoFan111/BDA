@@ -17,6 +17,26 @@
   border: 1px solid var(--border-color);
 }
 
+.authButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: linear-gradient(135deg, var(--light-color) 0%, #e0e7ff 100%);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .authButton {
+  color: #f9fafb;
+  background: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+}
+
 .authHeader {
   text-align: center;
   margin-bottom: var(--spacing-xl);
@@ -114,19 +134,6 @@
   padding: 0 var(--spacing-md);
   position: relative;
   z-index: 1;
-}
-
-.demoSection {
-  background: var(--light-color);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-  text-align: center;
-}
-
-.demoText {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  margin-bottom: var(--spacing-sm);
 }
 
 .demoCredentials {

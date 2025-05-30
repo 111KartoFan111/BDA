@@ -11,7 +11,7 @@ module.exports = {
     sepolia: {
       provider: () => new HDWalletProvider(
         process.env.MNEMONIC,
-        `https://eth-sepolia.g.alchemy.com/v2/${process.env.INFURA_PROJECT_ID}`
+        `https://eth-sepolia.g.alchemy.com/v2/sw-BMbGHGOkXWmcIQRs-jGvzi4IVNMN1`
 
 
       ),
