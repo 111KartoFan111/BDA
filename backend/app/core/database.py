@@ -9,7 +9,7 @@ import redis
 from typing import Generator
 
 from app.core.config import settings
-from app.models.base import Base  # Импортируем Base из правильного места
+from app.models.base import Base
 
 # SQLAlchemy setup
 engine = create_engine(
@@ -21,7 +21,14 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Redis setup
-redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+try:
+    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+    # Проверяем подключение к Redis
+    redis_client.ping()
+    print("✅ Redis connected successfully")
+except Exception as e:
+    print(f"⚠️  Redis connection failed: {e}")
+    redis_client = None
 
 def get_db() -> Generator:
     """
@@ -43,13 +50,17 @@ def get_redis() -> redis.Redis:
     Returns:
         Redis client instance
     """
+    if redis_client is None:
+        raise RuntimeError("Redis is not available")
     return redis_client
 
 # Database utilities
 def init_db() -> None:
     """Initialize database tables."""
-    Base.price_metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created")
 
 def drop_db() -> None:
     """Drop all database tables."""
-    Base.price_metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=engine)
+    print("⚠️  Database tables dropped")

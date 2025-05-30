@@ -33,23 +33,38 @@ class BlockchainService:
     def _initialize_web3(self):
         """Инициализация подключения к Web3."""
         try:
-            if settings.WEB3_PROVIDER_URL and settings.WEB3_PROVIDER_URL != "https://sepolia.infura.io/v3/YOUR_INFURA_KEY":
-                self.w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URL))
+            # Используем правильный URL для Sepolia
+            provider_url = getattr(settings, 'WEB3_PROVIDER_URL', None)
+            if not provider_url:
+                # Fallback к переменной окружения или дефолтному URL
+                import os
+                provider_url = os.getenv('WEB3_PROVIDER_URL', 'https://eth-sepolia.g.alchemy.com/v2/sw-BMbGHGOkXWmcIQRs-jGvzi4IVNMN1')
+            
+            if provider_url and provider_url != "https://eth-sepolia.g.alchemy.com/v2/sw-BMbGHGOkXWmcIQRs-jGvzi4IVNMN1":
+                logger.info(f"Connecting to Web3 provider: {provider_url}")
+                self.w3 = Web3(Web3.HTTPProvider(provider_url))
                 
                 if not self.w3.is_connected():
                     logger.warning("Could not connect to Web3 provider")
                     return
                 
+                # Проверяем chainId
+                chain_id = self.w3.eth.chain_id
+                if chain_id != 11155111:  # Sepolia
+                    logger.warning(f"Connected to unexpected network: {chain_id}")
+                
                 # Загружаем ABI контрактов
                 self._load_contract_abis()
                 self._initialize_factory_contract()
                 
-                logger.info(f"Connected to blockchain network: {self.w3.eth.chain_id}")
+                logger.info(f"Connected to blockchain network: {chain_id}")
             else:
                 logger.warning("Web3 provider URL not configured properly")
+                logger.warning("Falling back to mock mode")
         except Exception as e:
             logger.error(f"Web3 initialization failed: {e}")
-    
+            logger.warning("Falling back to mock mode")
+
     def _load_contract_abis(self):
         """Загрузка ABI контрактов."""
         # В реальном проекте ABI можно загружать из файлов или БД
