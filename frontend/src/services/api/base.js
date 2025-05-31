@@ -1,12 +1,12 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
-// Базовый URL API - исправляем путь
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+// Базовый URL API - ИСПРАВЛЕНО: используем базовый URL без /v1
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // Создание экземпляра axios
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`, // Добавляем только /api
   headers: {
     'Content-Type': 'application/json',
   },
@@ -190,7 +190,7 @@ export const checkApiHealth = async () => {
 // Функция для тестирования подключения к API
 export const testApiConnection = async () => {
   try {
-    console.log('Testing API connection to:', API_BASE_URL)
+    console.log('Testing API connection to:', `${API_BASE_URL}/api`)
     
     // Пробуем простой запрос
     const response = await api.get('/v1/categories', { 

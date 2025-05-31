@@ -1,4 +1,4 @@
-// frontend/src/pages/Contracts/CreateContract.jsx
+// frontend/src/pages/Contracts/CreateContract.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, FileText } from 'lucide-react'
@@ -32,20 +32,32 @@ const CreateContract = () => {
     setIsLoading(true)
     
     try {
-      console.log('Creating contract with data:', formData)
+      console.log('Creating contract with form data:', formData)
       
-      // Подготавливаем данные для API
+      // Функция для форматирования даты в ISO формат
+      const formatDateForAPI = (dateTimeLocal) => {
+        if (!dateTimeLocal) return null
+        
+        // Если уже в ISO формате
+        if (dateTimeLocal.includes('Z')) {
+          return dateTimeLocal
+        }
+        
+        // Преобразуем datetime-local в ISO формат
+        const date = new Date(dateTimeLocal)
+        return date.toISOString()
+      }
+      
+      // Преобразуем данные формы в формат API
       const contractData = {
         item_id: formData.itemId,
         tenant_email: formData.tenantEmail,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
-        total_price: formData.totalPrice,
-        message: formData.message,
-        special_terms: formData.specialTerms,
-        // Дополнительные поля для контекста
-        total_days: formData.totalDays,
-        item_title: formData.itemInfo?.title
+        start_date: formatDateForAPI(formData.startDate),
+        end_date: formatDateForAPI(formData.endDate),
+        total_price: parseFloat(formData.totalPrice || 0),
+        deposit: parseFloat(formData.deposit || 0),
+        terms: formData.message || '',
+        special_conditions: formData.specialTerms || ''
       }
       
       console.log('Sending contract data to API:', contractData)
@@ -54,11 +66,17 @@ const CreateContract = () => {
       console.log('Create contract response:', response)
       
       // Извлекаем данные контракта из ответа
-      let newContract = response.data
-      if (response.data.data) {
-        newContract = response.data.data
-      } else if (response.data.success) {
-        newContract = response.data.data || response.data
+      let newContract = null
+      
+      // Обрабатываем разные форматы ответа от API
+      if (response.data) {
+        if (response.data.success && response.data.data) {
+          newContract = response.data.data
+        } else if (response.data.data) {
+          newContract = response.data.data
+        } else if (response.data.id) {
+          newContract = response.data
+        }
       }
       
       if (!newContract || !newContract.id) {
@@ -70,12 +88,12 @@ const CreateContract = () => {
 
       setCreatedContract(newContract)
       setIsSuccessModalOpen(true)
-      toast.success('Предложение аренды отправлено!')
+      toast.success('Предложение аренды успешно отправлено!')
       
     } catch (error) {
       console.error('Error creating contract:', error)
       
-      // Более детальная обработка ошибок
+      // Детальная обработка ошибок
       let errorMessage = 'Ошибка при создании контракта'
       
       if (error.response?.status === 422) {
@@ -85,10 +103,33 @@ const CreateContract = () => {
           const validationErrors = error.response.data.details
           if (Array.isArray(validationErrors)) {
             const errorMessages = validationErrors.map(err => {
+              // Переводим поля на русский
+              const fieldTranslations = {
+                'item_id': 'Товар',
+                'tenant_email': 'Email арендатора',
+                'tenant_id': 'ID арендатора',
+                'start_date': 'Дата начала',
+                'end_date': 'Дата окончания',
+                'total_price': 'Общая стоимость',
+                'terms': 'Условия',
+                'special_conditions': 'Особые условия',
+                'deposit': 'Залог'
+              }
+              
               const field = err.loc?.slice(-1)[0] || 'поле'
-              return `${field}: ${err.msg}`
+              const fieldName = fieldTranslations[field] || field
+              
+              // Переводим сообщения об ошибках
+              let message = err.msg
+              if (message.includes('Input should be a valid datetime')) {
+                message = 'Неверный формат даты и времени'
+              } else if (message.includes('Field required')) {
+                message = 'Обязательное поле'
+              }
+              
+              return `${fieldName}: ${message}`
             })
-            errorMessage = `Ошибки валидации: ${errorMessages.join(', ')}`
+            errorMessage = `Ошибки валидации:\n${errorMessages.join('\n')}`
           }
         } else if (error.response.data?.message) {
           errorMessage = error.response.data.message

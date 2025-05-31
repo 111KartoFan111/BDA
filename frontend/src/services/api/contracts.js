@@ -1,4 +1,4 @@
-// frontend/src/services/api/contracts.js - ОБНОВЛЕННАЯ ВЕРСИЯ
+// frontend/src/services/api/contracts.js - ИСПРАВЛЕННАЯ ВЕРСИЯ
 import { apiRequest } from './base'
 
 export const contractsAPI = {
@@ -12,32 +12,55 @@ export const contractsAPI = {
     return apiRequest.get(`/v1/contracts/${id}`)
   },
 
-  // НОВЫЙ МЕТОД: Создание нового контракта (предложения аренды)
+  // ИСПРАВЛЕННЫЙ МЕТОД: Создание нового контракта
   createContract: (contractData) => {
-    return apiRequest.post('/v1/contracts', {
-      item_id: contractData.item_id,
-      tenant_email: contractData.tenant_email,
-      start_date: contractData.start_date,
-      end_date: contractData.end_date,
-      total_price: contractData.total_price,
-      message: contractData.message,
-      special_terms: contractData.special_terms,
-      // Дополнительные поля
-      total_days: contractData.total_days,
-      item_title: contractData.item_title
-    })
+    // Функция для преобразования datetime-local в ISO формат
+    const formatDateTimeForAPI = (dateTimeLocal) => {
+      if (!dateTimeLocal) return null
+      
+      // Если уже в ISO формате, возвращаем как есть
+      if (dateTimeLocal.includes('T') && dateTimeLocal.includes('Z')) {
+        return dateTimeLocal
+      }
+      
+      // Если в формате datetime-local (YYYY-MM-DDTHH:mm)
+      if (dateTimeLocal.includes('T')) {
+        return `${dateTimeLocal}:00Z`
+      }
+      
+      // Если в формате даты без времени
+      const date = new Date(dateTimeLocal)
+      return date.toISOString()
+    }
+
+    // Преобразуем данные фронтенда в формат бэкенда
+    const backendData = {
+      item_id: contractData.item_id || contractData.itemId,
+      start_date: formatDateTimeForAPI(contractData.start_date || contractData.startDate),
+      end_date: formatDateTimeForAPI(contractData.end_date || contractData.endDate),
+      total_price: parseFloat(contractData.total_price || contractData.totalPrice || 0),
+      deposit: parseFloat(contractData.deposit || 0),
+      terms: contractData.terms || contractData.message || '',
+      special_conditions: contractData.special_conditions || contractData.special_terms || contractData.specialTerms || '',
+      // Убираем tenant_email - будем искать пользователя по email на бэкенде
+      tenant_email: contractData.tenant_email || contractData.tenantEmail
+    }
+
+    console.log('Sending contract data to backend:', backendData)
+    
+    return apiRequest.post('/v1/contracts', backendData)
   },
 
-  // НОВЫЙ МЕТОД: Создание предложения аренды (альтернативное название)
+  // Создание предложения аренды (альтернативное название)
   createRentalProposal: (proposalData) => {
     return apiRequest.post('/v1/contracts/proposals', {
-      itemId: proposalData.itemId,
-      tenantEmail: proposalData.tenantEmail,
-      startDate: proposalData.startDate,
-      endDate: proposalData.endDate,
-      totalPrice: proposalData.totalPrice,
-      message: proposalData.message,
-      terms: proposalData.terms,
+      item_id: proposalData.itemId,
+      tenant_email: proposalData.tenantEmail,
+      start_date: proposalData.startDate,
+      end_date: proposalData.endDate,
+      total_price: proposalData.totalPrice,
+      terms: proposalData.message,
+      special_conditions: proposalData.terms,
     })
   },
 
@@ -46,7 +69,7 @@ export const contractsAPI = {
     return apiRequest.patch(`/v1/contracts/${id}/sign`, { signature })
   },
 
-  // НОВЫЙ МЕТОД: Принятие предложения аренды
+  // Принятие предложения аренды
   acceptProposal: (id, acceptanceData = {}) => {
     return apiRequest.patch(`/v1/contracts/${id}/accept`, {
       wallet_address: acceptanceData.walletAddress,
@@ -54,7 +77,7 @@ export const contractsAPI = {
     })
   },
 
-  // НОВЫЙ МЕТОД: Отклонение предложения аренды
+  // Отклонение предложения аренды
   rejectProposal: (id, rejectionData) => {
     return apiRequest.patch(`/v1/contracts/${id}/reject`, {
       reason: rejectionData.reason,
@@ -227,12 +250,12 @@ export const contractsAPI = {
     return apiRequest.get('/v1/contracts/pending')
   },
 
-  // НОВЫЙ МЕТОД: Получение входящих предложений (для арендатора)
+  // Получение входящих предложений (для арендатора)
   getIncomingProposals: (params = {}) => {
     return apiRequest.get('/v1/contracts/incoming', { params })
   },
 
-  // НОВЫЙ МЕТОД: Получение исходящих предложений (для владельца)
+  // Получение исходящих предложений (для владельца)
   getOutgoingProposals: (params = {}) => {
     return apiRequest.get('/v1/contracts/outgoing', { params })
   },
@@ -278,7 +301,7 @@ export const contractsAPI = {
     return apiRequest.delete(`/v1/contracts/${id}/auto-renewal`)
   },
 
-  // НОВЫЕ МЕТОДЫ ДЛЯ РАБОТЫ С ПРЕДЛОЖЕНИЯМИ
+  // МЕТОДЫ ДЛЯ РАБОТЫ С ПРЕДЛОЖЕНИЯМИ
 
   // Получение доступных товаров для создания предложения
   getAvailableItems: (params = {}) => {
