@@ -1,5 +1,6 @@
 """
 Main FastAPI application for RentChain backend.
+ИСПРАВЛЕН CORS для работы с браузером.
 """
 
 from fastapi import FastAPI, Request
@@ -40,13 +41,32 @@ app = FastAPI(
     redoc_url="/redoc" if settings.DEBUG else None,
 )
 
-# CORS middleware - ИСПРАВЛЕННЫЕ НАСТРОЙКИ
-if settings.BACKEND_CORS_ORIGINS:
+if settings.DEBUG:
+    logger.info("🚨 Development mode: Enabling permissive CORS")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+        allow_origins=["*"],  # В разработке разрешаем всё
+        allow_credentials=False,  # Важно: False когда allow_origins=["*"]
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+        expose_headers=["X-Process-Time"],
+        max_age=86400,
+    )
+    logger.info("✅ CORS configured for development (allow all origins)")
+else:
+    # Production CORS - только разрешённые origins
+    origins = []
+    if settings.BACKEND_CORS_ORIGINS:
+        if isinstance(settings.BACKEND_CORS_ORIGINS, str):
+            origins = [origins.strip() for origins in settings.BACKEND_CORS_ORIGINS.split(",")]
+        else:
+            origins = [str(origin) for origin in settings.BACKEND_CORS_ORIGINS]
+    
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],  # Явно указываем методы
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=[
             "Accept",
             "Accept-Language", 
@@ -54,20 +74,13 @@ if settings.BACKEND_CORS_ORIGINS:
             "Content-Type",
             "Authorization",
             "X-Requested-With",
-            "X-Process-Time"
+            "X-Process-Time",
+            "Origin"
         ],
-        expose_headers=["X-Process-Time"],  # Заголовки, которые клиент может видеть
-        max_age=86400,  # 24 часа кеширования preflight запросов
+        expose_headers=["X-Process-Time"],
+        max_age=86400,
     )
-else:
-    # Настройки по умолчанию для разработки
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:8080"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    logger.info(f"✅ CORS configured for production with origins: {origins}")
 
 # Trusted host middleware - только для production
 if not settings.DEBUG:
@@ -93,6 +106,24 @@ async def log_requests(request: Request, call_next):
     # Логируем заголовки для отладки CORS
     if request.method == "OPTIONS":
         logger.info(f"OPTIONS request headers: {dict(request.headers)}")
+        origin = request.headers.get("origin")
+        logger.info(f"Origin: {origin}")
+        
+        # Проверяем, разрешён ли этот origin
+        if settings.DEBUG:
+            logger.info("✅ Development mode: All origins allowed")
+        else:
+            allowed_origins = []
+            if settings.BACKEND_CORS_ORIGINS:
+                if isinstance(settings.BACKEND_CORS_ORIGINS, str):
+                    allowed_origins = [o.strip() for o in settings.BACKEND_CORS_ORIGINS.split(",")]
+                else:
+                    allowed_origins = [str(o) for o in settings.BACKEND_CORS_ORIGINS]
+            
+            if origin in allowed_origins:
+                logger.info(f"✅ Origin {origin} is allowed")
+            else:
+                logger.warning(f"❌ Origin {origin} is NOT in allowed list: {allowed_origins}")
     
     response = await call_next(request)
     
@@ -165,20 +196,6 @@ async def general_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# Explicit OPTIONS handler for problematic routes
-@app.options("/api/v1/auth/{path:path}")
-async def options_handler():
-    return JSONResponse(
-        status_code=200,
-        content={"message": "OK"},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Accept, Content-Type, Authorization, X-Requested-With",
-            "Access-Control-Max-Age": "86400"
-        }
-    )
-
 # Health check endpoint
 @app.get("/health")
 async def health_check():
@@ -186,8 +203,23 @@ async def health_check():
     return {
         "status": "healthy",
         "version": settings.PROJECT_VERSION,
-        "environment": settings.ENVIRONMENT
+        "environment": settings.ENVIRONMENT,
+        "cors_enabled": True,
+        "debug_mode": settings.DEBUG
     }
+
+# CORS Test endpoint - для отладки
+@app.get("/cors-test")
+async def cors_test():
+    """Endpoint для тестирования CORS."""
+    return {
+        "message": "CORS working!",
+        "timestamp": time.time(),
+        "debug": settings.DEBUG
+    }
+
+# Explicit OPTIONS handler - УБИРАЕМ, FastAPI CORS middleware сам обрабатывает
+# @app.options("/api/v1/{path:path}")  # УДАЛЕНО
 
 # API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
@@ -196,16 +228,20 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.on_event("startup")
 async def startup_event():
     """Application startup event."""
-    logger.info(f"Starting {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
+    logger.info(f"🚀 Starting {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
-    logger.info(f"CORS origins: {settings.BACKEND_CORS_ORIGINS}")
+    
+    if settings.DEBUG:
+        logger.info("🚨 DEVELOPMENT MODE: CORS allows all origins")
+    else:
+        logger.info(f"CORS origins: {settings.BACKEND_CORS_ORIGINS}")
     
     # Create database tables
     if settings.DEBUG:
         # In production, use Alembic migrations instead
         Base.metadata.create_all(bind=engine)
-        logger.info("Database tables created")
+        logger.info("✅ Database tables created")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -220,7 +256,8 @@ async def root():
         "message": f"Welcome to {settings.PROJECT_NAME} API",
         "version": settings.PROJECT_VERSION,
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
+        "cors_test": "/cors-test"
     }
 
 if __name__ == "__main__":

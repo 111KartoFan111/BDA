@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Fixed: Ensure this is an integer
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     PASSWORD_MIN_LENGTH: int = 8
     
     # Database
@@ -55,7 +55,23 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     ALLOWED_FILE_TYPES: List[str] = ["jpg", "jpeg", "png", "pdf", "doc", "docx"]
-    ALLOWED_IMAGE_TYPES: List[str] = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    ALLOWED_IMAGE_TYPES: Union[str, List[str]] = "image/jpeg,image/png,image/gif,image/webp"
+    
+    @field_validator("ALLOWED_IMAGE_TYPES", mode="before")
+    @classmethod
+    def parse_allowed_image_types(cls, v):
+        if isinstance(v, str):
+            if v.startswith("[") and v.endswith("]"):
+                try:
+                    # Try to parse as JSON array
+                    return json.loads(v)
+                except json.JSONDecodeError:
+                    # If JSON parsing fails, treat as comma-separated string
+                    return [item.strip() for item in v.strip("[]").split(",")]
+            else:
+                # Comma-separated string
+                return [item.strip() for item in v.split(",")]
+        return v
     
     # Email Settings
     EMAIL_HOST: Optional[str] = None
@@ -99,7 +115,7 @@ class Settings(BaseSettings):
         
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Автозагрузка адреса фабрики из deployed файла
+        # Auto-load factory address from deployed file
         self._load_deployed_addresses()
         
         # Ensure certain settings are properly typed
@@ -125,7 +141,7 @@ class Settings(BaseSettings):
         os.makedirs(self.MODEL_PATH, exist_ok=True)
     
     def _load_deployed_addresses(self):
-        """Загрузка адресов контрактов из deployed файла."""
+        """Load contract addresses from deployed file."""
         try:
             deployed_file = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
@@ -136,7 +152,7 @@ class Settings(BaseSettings):
                 with open(deployed_file, 'r') as f:
                     deployed_data = json.load(f)
                     
-                # Обновляем адрес фабрики если он не задан в переменных окружения
+                # Update factory address if not set in environment variables
                 if not self.RENTAL_FACTORY_ADDRESS and 'RentalFactory' in deployed_data:
                     self.RENTAL_FACTORY_ADDRESS = deployed_data['RentalFactory']
                     print(f"Loaded RENTAL_FACTORY_ADDRESS from deployed file: {self.RENTAL_FACTORY_ADDRESS}")
@@ -145,8 +161,13 @@ class Settings(BaseSettings):
             print(f"Could not load deployed addresses: {e}")
 
 
-# Create settings instance
-settings = Settings()
+# Create settings instance with proper error handling
+try:
+    settings = Settings()
+except Exception as e:
+    print(f"Error loading settings: {e}")
+    print("Please check your .env file configuration")
+    raise
 
 # Validate critical settings
 if not settings.SECRET_KEY:
@@ -162,3 +183,4 @@ print(f"Debug: {settings.DEBUG}")
 print(f"Web3 Provider: {settings.WEB3_PROVIDER_URL}")
 print(f"Factory Address: {settings.RENTAL_FACTORY_ADDRESS}")
 print(f"CORS Origins: {settings.BACKEND_CORS_ORIGINS}")
+print(f"Allowed Image Types: {settings.ALLOWED_IMAGE_TYPES}")
