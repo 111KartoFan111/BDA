@@ -33,8 +33,8 @@ def create_access_token(
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(
-            days=int(settings.REFRESH_TOKEN_EXPIRE_DAYS))
-
+            minutes=getattr(settings, 'ACCESS_TOKEN_EXPIRE_MINUTES', 30)
+        )
     
     to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
     encoded_jwt = jwt.encode(
@@ -61,9 +61,11 @@ def create_refresh_token(
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
-            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-        )
+        # Fix: Ensure we get an integer value for days
+        refresh_days = getattr(settings, 'REFRESH_TOKEN_EXPIRE_DAYS', 7)
+        if isinstance(refresh_days, str):
+            refresh_days = int(refresh_days)
+        expire = datetime.utcnow() + timedelta(days=refresh_days)
     
     to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
     encoded_jwt = jwt.encode(
@@ -230,8 +232,13 @@ def validate_password_strength(password: str) -> list:
     """
     errors = []
     
-    if len(password) < settings.PASSWORD_MIN_LENGTH:
-        errors.append(f"Password must be at least {settings.PASSWORD_MIN_LENGTH} characters long")
+    # Get minimum length from settings, default to 8
+    min_length = getattr(settings, 'PASSWORD_MIN_LENGTH', 8)
+    if isinstance(min_length, str):
+        min_length = int(min_length)
+    
+    if len(password) < min_length:
+        errors.append(f"Password must be at least {min_length} characters long")
     
     if not any(c.islower() for c in password):
         errors.append("Password must contain at least one lowercase letter")

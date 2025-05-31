@@ -1,3 +1,4 @@
+// frontend/src/App.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ с новым маршрутом
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
@@ -25,6 +26,7 @@ import ItemDetail from './pages/Items/ItemDetail'
 import CreateItem from './pages/Items/CreateItem'
 import ContractsList from './pages/Contracts/ContractsList'
 import ContractDetail from './pages/Contracts/ContractDetail'
+import CreateContract from './pages/Contracts/CreateContract' // НОВЫЙ ИМПОРТ
 import Profile from './pages/Profile/Profile'
 import Analytics from './pages/Analytics/Analytics'
 import AdminPanel from './pages/Admin/AdminPage'
@@ -111,6 +113,13 @@ function App() {
                   <Route path="/contracts" element={
                     <ProtectedRoute>
                       <ContractsList />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* НОВЫЙ МАРШРУТ: Создание контракта */}
+                  <Route path="/contracts/create" element={
+                    <ProtectedRoute>
+                      <CreateContract />
                     </ProtectedRoute>
                   } />
                   

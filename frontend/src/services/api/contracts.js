@@ -1,9 +1,10 @@
+// frontend/src/services/api/contracts.js - ОБНОВЛЕННАЯ ВЕРСИЯ
 import { apiRequest } from './base'
 
 export const contractsAPI = {
   // Получение списка контрактов пользователя
   getUserContracts: (params = {}) => {
-    return apiRequest.get('/v1/contracts')
+    return apiRequest.get('/v1/contracts', { params })
   },
 
   // Получение контракта по ID
@@ -11,22 +12,54 @@ export const contractsAPI = {
     return apiRequest.get(`/v1/contracts/${id}`)
   },
 
-  // Создание нового контракта
+  // НОВЫЙ МЕТОД: Создание нового контракта (предложения аренды)
   createContract: (contractData) => {
     return apiRequest.post('/v1/contracts', {
-      itemId: contractData.itemId,
-      tenantAddress: contractData.tenantAddress,
-      startDate: contractData.startDate,
-      endDate: contractData.endDate,
-      totalPrice: contractData.totalPrice,
-      deposit: contractData.deposit,
-      terms: contractData.terms,
+      item_id: contractData.item_id,
+      tenant_email: contractData.tenant_email,
+      start_date: contractData.start_date,
+      end_date: contractData.end_date,
+      total_price: contractData.total_price,
+      message: contractData.message,
+      special_terms: contractData.special_terms,
+      // Дополнительные поля
+      total_days: contractData.total_days,
+      item_title: contractData.item_title
+    })
+  },
+
+  // НОВЫЙ МЕТОД: Создание предложения аренды (альтернативное название)
+  createRentalProposal: (proposalData) => {
+    return apiRequest.post('/v1/contracts/proposals', {
+      itemId: proposalData.itemId,
+      tenantEmail: proposalData.tenantEmail,
+      startDate: proposalData.startDate,
+      endDate: proposalData.endDate,
+      totalPrice: proposalData.totalPrice,
+      message: proposalData.message,
+      terms: proposalData.terms,
     })
   },
 
   // Подписание контракта арендатором
   signContract: (id, signature) => {
     return apiRequest.patch(`/v1/contracts/${id}/sign`, { signature })
+  },
+
+  // НОВЫЙ МЕТОД: Принятие предложения аренды
+  acceptProposal: (id, acceptanceData = {}) => {
+    return apiRequest.patch(`/v1/contracts/${id}/accept`, {
+      wallet_address: acceptanceData.walletAddress,
+      notes: acceptanceData.notes
+    })
+  },
+
+  // НОВЫЙ МЕТОД: Отклонение предложения аренды
+  rejectProposal: (id, rejectionData) => {
+    return apiRequest.patch(`/v1/contracts/${id}/reject`, {
+      reason: rejectionData.reason,
+      message: rejectionData.message
+    })
   },
 
   // Активация контракта (после деплоя в блокчейн)
@@ -194,6 +227,16 @@ export const contractsAPI = {
     return apiRequest.get('/v1/contracts/pending')
   },
 
+  // НОВЫЙ МЕТОД: Получение входящих предложений (для арендатора)
+  getIncomingProposals: (params = {}) => {
+    return apiRequest.get('/v1/contracts/incoming', { params })
+  },
+
+  // НОВЫЙ МЕТОД: Получение исходящих предложений (для владельца)
+  getOutgoingProposals: (params = {}) => {
+    return apiRequest.get('/v1/contracts/outgoing', { params })
+  },
+
   // Отправка напоминания о контракте
   sendReminder: (id, reminderType) => {
     return apiRequest.post(`/v1/contracts/${id}/reminder`, {
@@ -234,4 +277,53 @@ export const contractsAPI = {
   disableAutoRenewal: (id) => {
     return apiRequest.delete(`/v1/contracts/${id}/auto-renewal`)
   },
+
+  // НОВЫЕ МЕТОДЫ ДЛЯ РАБОТЫ С ПРЕДЛОЖЕНИЯМИ
+
+  // Получение доступных товаров для создания предложения
+  getAvailableItems: (params = {}) => {
+    return apiRequest.get('/v1/contracts/available-items', { params })
+  },
+
+  // Проверка доступности товара на указанные даты
+  checkItemAvailability: (itemId, startDate, endDate) => {
+    return apiRequest.post(`/v1/contracts/check-availability`, {
+      item_id: itemId,
+      start_date: startDate,
+      end_date: endDate
+    })
+  },
+
+  // Расчет стоимости аренды
+  calculateRentalCost: (itemId, startDate, endDate) => {
+    return apiRequest.post(`/v1/contracts/calculate-cost`, {
+      item_id: itemId,
+      start_date: startDate,
+      end_date: endDate
+    })
+  },
+
+  // Получение предложенных условий
+  getProposalTerms: (itemId) => {
+    return apiRequest.get(`/v1/contracts/proposal-terms/${itemId}`)
+  },
+
+  // МЕТОДЫ ДЛЯ УВЕДОМЛЕНИЙ
+
+  // Отправка уведомления о новом предложении
+  notifyNewProposal: (contractId) => {
+    return apiRequest.post(`/v1/contracts/${contractId}/notify/proposal`)
+  },
+
+  // Отправка уведомления о принятии предложения
+  notifyProposalAccepted: (contractId) => {
+    return apiRequest.post(`/v1/contracts/${contractId}/notify/accepted`)
+  },
+
+  // Отправка уведомления об отклонении предложения
+  notifyProposalRejected: (contractId) => {
+    return apiRequest.post(`/v1/contracts/${contractId}/notify/rejected`)
+  }
 }
+
+export default contractsAPI

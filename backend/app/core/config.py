@@ -4,7 +4,7 @@ Configuration settings for the application.
 
 import os
 from typing import List, Optional, Union
-from pydantic import AnyHttpUrl, validator,Extra
+from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings
 import json
 
@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Fixed: Ensure this is an integer
+    PASSWORD_MIN_LENGTH: int = 8
     
     # Database
     DATABASE_URL: str
@@ -34,7 +36,8 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: Union[str, List[AnyHttpUrl]] = []
     
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
@@ -52,16 +55,37 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     ALLOWED_FILE_TYPES: List[str] = ["jpg", "jpeg", "png", "pdf", "doc", "docx"]
+    ALLOWED_IMAGE_TYPES: List[str] = ["image/jpeg", "image/png", "image/gif", "image/webp"]
     
-    # Email Settings (for future use)
+    # Email Settings
     EMAIL_HOST: Optional[str] = None
     EMAIL_PORT: Optional[int] = None
     EMAIL_USERNAME: Optional[str] = None
     EMAIL_PASSWORD: Optional[str] = None
     EMAIL_USE_TLS: bool = True
     
+    # SMTP Settings (alternative naming)
+    SMTP_SERVER: Optional[str] = None
+    SMTP_PORT: Optional[int] = 587
+    SMTP_USERNAME: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_TLS: bool = True
+    SMTP_SSL: bool = False
+    EMAIL_FROM: Optional[str] = None
+    EMAIL_FROM_NAME: Optional[str] = "RentChain"
+    
+    # Frontend URL
+    FRONTEND_URL: str = "http://localhost:3000"
+    
     # Redis Settings (for caching)
-    REDIS_URL: Optional[str] = None
+    REDIS_URL: str = "redis://localhost:6379/0"
+    
+    # Celery Settings
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+    
+    # ML Model Settings
+    MODEL_PATH: str = "models"
     
     # Rate Limiting
     RATE_LIMIT_ENABLED: bool = False
@@ -69,19 +93,40 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW: int = 3600  # 1 hour
     
     class Config:
-        extra = Extra.allow
         case_sensitive = True
         env_file = ".env"
+        extra = "allow"
         
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # Автозагрузка адреса фабрики из deployed файла
         self._load_deployed_addresses()
+        
+        # Ensure certain settings are properly typed
+        self._validate_and_convert_settings()
+    
+    def _validate_and_convert_settings(self):
+        """Validate and convert settings to proper types."""
+        # Convert string values to integers where needed
+        if isinstance(self.ACCESS_TOKEN_EXPIRE_MINUTES, str):
+            self.ACCESS_TOKEN_EXPIRE_MINUTES = int(self.ACCESS_TOKEN_EXPIRE_MINUTES)
+        
+        if isinstance(self.REFRESH_TOKEN_EXPIRE_DAYS, str):
+            self.REFRESH_TOKEN_EXPIRE_DAYS = int(self.REFRESH_TOKEN_EXPIRE_DAYS)
+            
+        if isinstance(self.PASSWORD_MIN_LENGTH, str):
+            self.PASSWORD_MIN_LENGTH = int(self.PASSWORD_MIN_LENGTH)
+            
+        if isinstance(self.MAX_FILE_SIZE, str):
+            self.MAX_FILE_SIZE = int(self.MAX_FILE_SIZE)
+        
+        # Ensure directories exist
+        os.makedirs(self.UPLOAD_DIR, exist_ok=True)
+        os.makedirs(self.MODEL_PATH, exist_ok=True)
     
     def _load_deployed_addresses(self):
         """Загрузка адресов контрактов из deployed файла."""
         try:
-            import os
             deployed_file = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
                 'smart-contracts', 'deployed', 'sepolia-addresses.json'

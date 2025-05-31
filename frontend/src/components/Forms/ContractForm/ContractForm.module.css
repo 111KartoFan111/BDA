@@ -1,0 +1,511 @@
+/* frontend/src/components/Forms/ContractForm/ContractForm.module.css */
+
+.contractForm {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.section {
+  padding: var(--spacing-xl);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--primary-light);
+}
+
+/* Выбор товара */
+.itemSelection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.selectGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.selectLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.required {
+  color: var(--error-color);
+}
+
+.select {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+  min-height: 2.5rem;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.selectError {
+  border-color: var(--error-color);
+}
+
+.selectError:focus {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.selectedItemPreview {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--light-color);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.itemImage {
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--border-color);
+}
+
+.itemImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.itemDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.itemPrice {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-xs);
+}
+
+.itemLocation {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Арендатор */
+.tenantSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.searchResults {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.searchResultsTitle {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  margin: 0;
+}
+
+.searchResultItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.searchResultItem:hover {
+  background: var(--light-color);
+}
+
+.userAvatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.userAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.userName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.userEmail {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.selectedTenant {
+  margin-top: var(--spacing-md);
+}
+
+.tenantCard {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--primary-light);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--primary-color);
+}
+
+.tenantAvatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tenantAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tenantInfo {
+  flex: 1;
+}
+
+.tenantName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.tenantEmail {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.tenantRating {
+  font-size: 0.75rem;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+/* Период аренды */
+.dateRange {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+.rentalSummary {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--success-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--success-color);
+}
+
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.summaryItem:last-child {
+  margin-bottom: 0;
+}
+
+.summaryBreakdown {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+/* Текстовые поля */
+.textareaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+}
+
+.textareaGroup:last-child {
+  margin-bottom: 0;
+}
+
+.textareaLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color var(--transition-fast);
+  line-height: 1.5;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.textareaError {
+  border-color: var(--error-color);
+}
+
+.textareaError:focus {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.errorText {
+  color: var(--error-color);
+  font-size: 0.75rem;
+  margin-top: var(--spacing-xs);
+}
+
+.helperText {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: var(--spacing-xs);
+  line-height: 1.4;
+}
+
+/* Действия формы */
+.formActions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+  background: var(--light-color);
+  border-radius: var(--radius-lg);
+  margin-top: var(--spacing-lg);
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+  .section {
+    padding: var(--spacing-sm);
+  }
+  
+  .formActions {
+    padding: var(--spacing-sm);
+  }
+  
+  .selectedItemPreview {
+    padding: var(--spacing-sm);
+  }
+  
+  .tenantCard {
+    padding: var(--spacing-sm);
+  }
+  
+  .rentalSummary {
+    padding: var(--spacing-sm);
+  }
+}
+
+/* Темная тема */
+[data-theme="dark"] .select {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .select:focus {
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .selectError {
+  border-color: var(--error-color);
+}
+
+[data-theme="dark"] .textarea {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .textarea:focus {
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .textareaError {
+  border-color: var(--error-color);
+}
+
+[data-theme="dark"] .sectionTitle {
+  color: #f9fafb;
+  border-bottom-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="dark"] .selectLabel,
+[data-theme="dark"] .textareaLabel {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .selectedItemPreview {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .itemTitle {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .searchResults {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .searchResultsTitle {
+  color: #d1d5db;
+  border-bottom-color: #4b5563;
+}
+
+[data-theme="dark"] .searchResultItem:hover {
+  background: #4b5563;
+}
+
+[data-theme="dark"] .userName {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .userEmail {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .tenantCard {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="dark"] .tenantName {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .tenantEmail {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .rentalSummary {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+[data-theme="dark"] .summaryItem {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .summaryBreakdown {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .helperText {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .formActions {
+  background: #374151;
+  border-top-color: #4b5563;
+}

@@ -1,3 +1,4 @@
+// frontend/src/pages/Contracts/ContractsList.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FileText, Filter, Search, Plus, Calendar } from 'lucide-react'
@@ -148,6 +149,18 @@ const ContractsList = () => {
               <p className={styles.subtitle}>
                 Управляйте вашими договорами аренды
               </p>
+            </div>
+            
+            {/* НОВАЯ КНОПКА: Создать контракт */}
+            <div className={styles.headerActions}>
+              <Link to="/contracts/create">
+                <Button
+                  variant="primary"
+                  icon={<Plus size={16} />}
+                >
+                  Создать контракт
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -334,17 +347,22 @@ const ContractsList = () => {
               <p className={styles.emptyDescription}>
                 {filters.search || filters.status || filters.type
                   ? 'Попробуйте изменить параметры поиска'
-                  : 'У вас пока нет контрактов. Найдите товар для аренды или разместите свой.'
+                  : 'У вас пока нет контрактов. Найдите товар для аренды или создайте предложение.'
                 }
               </p>
               <div className={styles.emptyActions}>
+                <Link to="/contracts/create">
+                  <Button variant="primary" icon={<Plus size={16} />}>
+                    Создать контракт
+                  </Button>
+                </Link>
                 <Link to="/items">
-                  <Button className={styles.walletButton} variant="primary">
+                  <Button className={styles.walletButton} variant="outline">
                     Найти товары
                   </Button>
                 </Link>
                 <Link to="/items/create">
-                  <Button variant="outline">
+                  <Button variant="ghost">
                     Добавить товар
                   </Button>
                 </Link>

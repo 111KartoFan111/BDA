@@ -1,3 +1,4 @@
+// frontend/src/pages/Items/ItemDetail.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
@@ -11,7 +12,8 @@ import {
   User,
   Shield,
   Clock,
-  DollarSign
+  DollarSign,
+  FileText // НОВЫЙ ИМПОРТ
 } from 'lucide-react'
 import { itemsAPI } from '../../services/api/items'
 import { useAuth } from '../../context/AuthContext'
@@ -84,6 +86,25 @@ const ItemDetail = () => {
       return
     }
     setIsRentalModalOpen(true)
+  }
+
+  // НОВЫЙ МЕТОД: Создание контракта аренды
+  const handleCreateContract = () => {
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+
+    // Переходим на страницу создания контракта с предзаполненными данными
+    navigate('/contracts/create', {
+      state: {
+        contractData: {
+          itemId: item.id,
+          startDate: rentalDates.startDate,
+          endDate: rentalDates.endDate
+        }
+      }
+    })
   }
 
   const handleRentalSubmit = async () => {
@@ -285,6 +306,18 @@ const ItemDetail = () => {
                   >
                     Арендовать
                   </Button>
+
+                  {/* НОВАЯ КНОПКА: Создать контракт */}
+                  <Button
+                    variant="outline"
+                    size="large"
+                    fullWidth
+                    onClick={handleCreateContract}
+                    disabled={!rentalDates.startDate || !rentalDates.endDate}
+                    icon={<FileText size={16} />}
+                  >
+                    Создать контракт аренды
+                  </Button>
                 </div>
               )}
 
@@ -296,6 +329,18 @@ const ItemDetail = () => {
                     onClick={() => navigate(`/items/${id}/edit`)}
                   >
                     Редактировать
+                  </Button>
+                  
+                  {/* НОВАЯ КНОПКА ДЛЯ ВЛАДЕЛЬЦА: Создать предложение аренды */}
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    onClick={() => navigate('/contracts/create', {
+                      state: { contractData: { itemId: item.id } }
+                    })}
+                    icon={<FileText size={16} />}
+                  >
+                    Создать предложение аренды
                   </Button>
                 </div>
               )}
