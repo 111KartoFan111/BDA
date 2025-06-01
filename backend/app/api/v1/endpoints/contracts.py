@@ -1,9 +1,10 @@
 """
-Contracts endpoints.
+Обновленные эндпоинты для работы с реальными смарт-контрактами.
+Заменяет backend/app/api/v1/endpoints/contracts.py
 """
 
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from sqlalchemy.orm import Session
 import uuid
 
@@ -11,6 +12,7 @@ from app.core.database import get_db
 from app.utils.dependencies import get_current_user, get_current_admin_user
 from app.services.contract import ContractService
 from app.services.user import UserService
+from app.services.blockchain import RealBlockchainService  # Используем новый сервис
 from app.schemas.contract import (
     ContractCreate, ContractUpdate, Contract, ContractDetail,
     ContractMessageCreate, ContractMessage, DisputeCreate, DisputeUpdate,
@@ -28,14 +30,14 @@ def get_contract_service(db: Session = Depends(get_db)) -> ContractService:
     return ContractService(db)
 
 
-
-def get_contract_service(db: Session = Depends(get_db)) -> ContractService:
-    """Get contract service dependency."""
-    return ContractService(db)
-
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     """Get user service dependency."""
     return UserService(db)
+
+
+def get_blockchain_service(db: Session = Depends(get_db)) -> RealBlockchainService:
+    """Get blockchain service dependency."""
+    return RealBlockchainService(db)
 
 
 @router.post("", response_model=Response[Contract])
@@ -47,7 +49,7 @@ async def create_contract(
 ) -> Any:
     """
     Create new rental contract.
-    ИСПРАВЛЕНО: Поддержка создания по email арендатора
+    ОБНОВЛЕНО: Поддержка создания по email арендатора + готовность к блокчейну
     """
     try:
         # Если указан tenant_email, находим пользователя
@@ -84,7 +86,7 @@ async def create_contract(
         
         return Response(
             data=contract,
-            message="Contract created successfully"
+            message="Contract created successfully. After signing by both parties, it can be deployed to blockchain."
         )
     except HTTPException:
         raise
@@ -94,6 +96,257 @@ async def create_contract(
             detail=f"Ошибка создания контракта: {str(e)}"
         )
 
+
+@router.post("/{contract_id}/deploy-to-blockchain", response_model=Response[dict])
+async def deploy_contract_to_blockchain(
+    contract_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
+) -> Any:
+    """
+    НОВЫЙ: Деплой подписанного контракта в блокчейн.
+    """
+    try:
+        result = blockchain_service.deploy_rental_contract(contract_id, current_user.id)
+        
+        return Response(
+            data=result,
+            message=f"Contract successfully deployed to blockchain at {result.get('contract_address')}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.post("/{contract_id}/pay-deposit", response_model=Response[dict])
+async def pay_contract_deposit(
+    contract_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    contract_service: ContractService = Depends(get_contract_service),
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
+) -> Any:
+    """
+    НОВЫЙ: Оплатить депозит по смарт-контракту.
+    """
+    try:
+        # Получаем контракт из БД
+        contract = contract_service.get_contract_by_id(contract_id, current_user.id)
+        if not contract:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Contract not found"
+            )
+        
+        if not contract.contract_address:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Contract not deployed to blockchain yet"
+            )
+        
+        # Оплачиваем депозит через блокчейн
+        result = blockchain_service.pay_deposit(contract.contract_address, current_user.id)
+        
+        return Response(
+            data=result,
+            message="Deposit paid successfully"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.post("/{contract_id}/complete", response_model=Response[dict])
+async def complete_contract_blockchain(
+    contract_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    contract_service: ContractService = Depends(get_contract_service),
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
+) -> Any:
+    """
+    ОБНОВЛЕНО: Завершить контракт через блокчейн.
+    """
+    try:
+        # Получаем контракт из БД
+        contract = contract_service.get_contract_by_id(contract_id, current_user.id)
+        if not contract:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Contract not found"
+            )
+        
+        if contract.contract_address:
+            # Завершаем через блокчейн
+            result = blockchain_service.complete_rental(contract.contract_address, current_user.id)
+            
+            return Response(
+                data=result,
+                message="Contract completed successfully via blockchain"
+            )
+        else:
+            # Обычное завершение (без блокчейна)
+            updated_contract = contract_service.complete_contract(contract_id, current_user.id)
+            
+            return Response(
+                data={"status": "completed"},
+                message="Contract completed successfully"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.post("/{contract_id}/cancel", response_model=Response[dict])
+async def cancel_contract_blockchain(
+    contract_id: uuid.UUID,
+    reason: str = Body("", embed=True),
+    current_user: User = Depends(get_current_user),
+    contract_service: ContractService = Depends(get_contract_service),
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
+) -> Any:
+    """
+    ОБНОВЛЕНО: Отменить контракт через блокчейн.
+    """
+    try:
+        # Получаем контракт из БД
+        contract = contract_service.get_contract_by_id(contract_id, current_user.id)
+        if not contract:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Contract not found"
+            )
+        
+        if contract.contract_address:
+            # Отменяем через блокчейн
+            result = blockchain_service.cancel_rental(contract.contract_address, current_user.id, reason)
+            
+            return Response(
+                data=result,
+                message="Contract cancelled successfully via blockchain"
+            )
+        else:
+            # Обычная отмена (без блокчейна)
+            updated_contract = contract_service.cancel_contract(contract_id, current_user.id, reason)
+            
+            return Response(
+                data={"status": "cancelled", "reason": reason},
+                message="Contract cancelled successfully"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.get("/{contract_id}/blockchain-status", response_model=Response[dict])
+async def get_contract_blockchain_status(
+    contract_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    contract_service: ContractService = Depends(get_contract_service),
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
+) -> Any:
+    """
+    НОВЫЙ: Получить статус контракта в блокчейне.
+    """
+    try:
+        # Получаем контракт из БД
+        contract = contract_service.get_contract_by_id(contract_id, current_user.id)
+        if not contract:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Contract not found"
+            )
+        
+        if not contract.contract_address:
+            return Response(
+                data={"deployed": False, "message": "Contract not deployed to blockchain"},
+                message="Contract exists only in database"
+            )
+        
+        # Получаем статус из блокчейна
+        blockchain_status = blockchain_service.get_contract_status(contract.contract_address)
+        
+        # Синхронизируем статусы
+        blockchain_service.sync_contract_status(contract_id)
+        
+        return Response(
+            data={
+                "deployed": True,
+                "blockchain_status": blockchain_status,
+                "contract_address": contract.contract_address,
+                "transaction_hash": contract.transaction_hash
+            },
+            message="Blockchain status retrieved successfully"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.post("/{contract_id}/sync-blockchain", response_model=Response[dict])
+async def sync_contract_with_blockchain(
+    contract_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    contract_service: ContractService = Depends(get_contract_service),
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
+) -> Any:
+    """
+    НОВЫЙ: Синхронизировать статус контракта с блокчейном.
+    """
+    try:
+        # Проверяем доступ к контракту
+        contract = contract_service.get_contract_by_id(contract_id, current_user.id)
+        if not contract:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Contract not found"
+            )
+        
+        if not contract.contract_address:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Contract not deployed to blockchain"
+            )
+        
+        # Синхронизируем
+        success = blockchain_service.sync_contract_status(contract_id)
+        
+        if success:
+            return Response(
+                data={"synced": True},
+                message="Contract status synchronized with blockchain"
+            )
+        else:
+            return Response(
+                data={"synced": False},
+                message="Failed to synchronize with blockchain"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+# Оставляем все остальные существующие эндпоинты без изменений
 @router.get("", response_model=PaginatedResponse[Contract])
 async def get_user_contracts(
     status: Optional[ContractStatus] = Query(None, description="Filter by status"),
@@ -142,6 +395,7 @@ async def get_contract(
     
     return Response(data=contract)
 
+
 @router.patch("/{contract_id}", response_model=Response[Contract])
 async def update_contract(
     contract_id: uuid.UUID,
@@ -172,62 +426,14 @@ async def sign_contract(
     contract = contract_service.sign_contract(
         contract_id, current_user.id, signature_data.signature
     )
+    
+    message = "Contract signed successfully"
+    if contract.tenant_signature and contract.owner_signature:
+        message += ". Contract is now ready for blockchain deployment!"
+    
     return Response(
         data=contract,
-        message="Contract signed successfully"
-    )
-
-
-@router.post("/{contract_id}/activate", response_model=Response[Contract])
-async def activate_contract(
-    contract_id: uuid.UUID,
-    contract_address: str,
-    transaction_hash: str,
-    current_user: User = Depends(get_current_user),
-    contract_service: ContractService = Depends(get_contract_service)
-) -> Any:
-    """
-    Activate contract after blockchain deployment.
-    """
-    contract = contract_service.activate_contract(
-        contract_id, contract_address, transaction_hash
-    )
-    return Response(
-        data=contract,
-        message="Contract activated successfully"
-    )
-
-
-@router.post("/{contract_id}/complete", response_model=Response[Contract])
-async def complete_contract(
-    contract_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    contract_service: ContractService = Depends(get_contract_service)
-) -> Any:
-    """
-    Complete rental contract.
-    """
-    contract = contract_service.complete_contract(contract_id, current_user.id)
-    return Response(
-        data=contract,
-        message="Contract completed successfully"
-    )
-
-
-@router.post("/{contract_id}/cancel", response_model=Response[Contract])
-async def cancel_contract(
-    contract_id: uuid.UUID,
-    reason: str = "",
-    current_user: User = Depends(get_current_user),
-    contract_service: ContractService = Depends(get_contract_service)
-) -> Any:
-    """
-    Cancel rental contract.
-    """
-    contract = contract_service.cancel_contract(contract_id, current_user.id, reason)
-    return Response(
-        data=contract,
-        message="Contract cancelled successfully"
+        message=message
     )
 
 

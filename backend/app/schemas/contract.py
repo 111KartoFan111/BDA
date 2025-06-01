@@ -4,12 +4,11 @@ Contract schemas for request/response validation.
 
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, field_validator, ConfigDict
-from datetime import datetime
+from datetime import datetime,timezone,timedelta
 from decimal import Decimal
 import uuid
 
 from app.models.contract import ContractStatus, PaymentStatus, DisputeStatus
-
 
 class ContractBase(BaseModel):
     """Base contract schema."""
@@ -24,8 +23,36 @@ class ContractBase(BaseModel):
     @field_validator('end_date')
     @classmethod
     def validate_end_date(cls, v, info):
-        if 'start_date' in info.data and v <= info.data['start_date']:
-            raise ValueError('End date must be after start date')
+        if 'start_date' in info.data:
+            start_date = info.data['start_date']
+            end_date = v
+            
+            # Нормализуем даты для сравнения
+            if start_date.tzinfo is not None:
+                start_date = start_date.astimezone(timezone.utc).replace(tzinfo=None)
+            
+            if end_date.tzinfo is not None:
+                end_date = end_date.astimezone(timezone.utc).replace(tzinfo=None)
+            
+            if end_date <= start_date:
+                raise ValueError('End date must be after start date')
+        return v
+    
+    @field_validator('start_date')
+    @classmethod  
+    def validate_start_date(cls, v):
+        # Нормализуем дату
+        if v.tzinfo is not None:
+            normalized_date = v.astimezone(timezone.utc).replace(tzinfo=None)
+        else:
+            normalized_date = v
+            
+        # Проверяем, что дата не слишком в прошлом (разрешаем в пределах часа)
+        current_time = datetime.utcnow()
+        one_hour_ago = current_time - timedelta(hours=1)
+        
+        if normalized_date < one_hour_ago:
+            raise ValueError('Start date cannot be more than 1 hour in the past')
         return v
     
     @field_validator('total_price', 'deposit')
@@ -38,8 +65,20 @@ class ContractBase(BaseModel):
 
 class ContractCreate(ContractBase):
     """Contract creation schema."""
-    tenant_id: uuid.UUID
-
+    tenant_id: Optional[uuid.UUID] = None
+    tenant_email: Optional[str] = None
+    
+    @field_validator('tenant_id', 'tenant_email')
+    @classmethod
+    def validate_tenant_info(cls, v, info):
+        # Проверяем, что указан либо tenant_id, либо tenant_email
+        tenant_id = info.data.get('tenant_id') if hasattr(info, 'data') else v if info.field_name == 'tenant_id' else None
+        tenant_email = info.data.get('tenant_email') if hasattr(info, 'data') else v if info.field_name == 'tenant_email' else None
+        
+        if not tenant_id and not tenant_email:
+            raise ValueError('Either tenant_id or tenant_email must be provided')
+        
+        return v
 
 class ContractUpdate(BaseModel):
     """Contract update schema."""

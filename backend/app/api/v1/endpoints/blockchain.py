@@ -9,7 +9,7 @@ import uuid
 
 from app.core.database import get_db
 from app.utils.dependencies import get_current_user, get_current_admin_user
-from app.services.blockchain import BlockchainService
+from app.services.blockchain import RealBlockchainService
 from app.schemas.common import Response
 from app.models.user import User
 from pydantic import BaseModel, Field
@@ -45,16 +45,16 @@ class WalletRequest(BaseModel):
     wallet_address: str
 
 
-def get_blockchain_service(db: Session = Depends(get_db)) -> BlockchainService:
+def get_blockchain_service(db: Session = Depends(get_db)) -> RealBlockchainService:
     """Get blockchain service dependency."""
-    return BlockchainService(db)
+    return RealBlockchainService(db)
 
 
 @router.post("/deploy-contract", response_model=Response[Dict[str, Any]])
 async def deploy_contract(
     deploy_request: ContractDeployRequest,
     current_user: User = Depends(get_current_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Деплой контракта аренды в блокчейн.
@@ -80,7 +80,7 @@ async def deploy_contract(
 async def get_contract_status(
     contract_address: str,
     current_user: User = Depends(get_current_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Получить статус смарт-контракта.
@@ -103,7 +103,7 @@ async def get_contract_status(
 async def verify_transaction(
     tx_hash: str,
     current_user: User = Depends(get_current_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Верификация транзакции в блокчейне.
@@ -126,7 +126,7 @@ async def verify_transaction(
 async def get_wallet_balance(
     wallet_address: str,
     current_user: User = Depends(get_current_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Получить баланс кошелька.
@@ -153,7 +153,7 @@ async def get_wallet_balance(
 async def create_payment_transaction(
     transaction_request: TransactionRequest,
     current_user: User = Depends(get_current_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Создать транзакцию платежа.
@@ -181,7 +181,7 @@ async def get_transaction_history(
     wallet_address: str,
     limit: int = Query(10, ge=1, le=100, description="Number of transactions"),
     current_user: User = Depends(get_current_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Получить историю транзакций кошелька.
@@ -202,7 +202,7 @@ async def get_transaction_history(
 
 @router.get("/gas/estimate", response_model=Response[Dict[str, Any]])
 async def get_gas_estimates(
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Получить текущие оценки цены газа.
@@ -223,7 +223,7 @@ async def get_gas_estimates(
 
 @router.get("/network/info", response_model=Response[Dict[str, Any]])
 async def get_network_info(
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Получить информацию о блокчейн сети.
@@ -246,7 +246,7 @@ async def get_network_info(
 async def validate_contract(
     wallet_request: WalletRequest,
     current_user: User = Depends(get_current_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Валидация смарт-контракта.
@@ -271,7 +271,7 @@ async def validate_contract(
 async def execute_contract_function(
     function_request: ContractFunctionRequest,
     current_user: User = Depends(get_current_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Выполнить функцию смарт-контракта.
@@ -308,7 +308,7 @@ async def get_contract_events(
     contract_address: str,
     from_block: int = Query(0, description="Starting block number"),
     current_user: User = Depends(get_current_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Получить события смарт-контракта.
@@ -331,7 +331,7 @@ async def get_contract_events(
 @router.get("/admin/network/stats", response_model=Response[Dict[str, Any]])
 async def get_network_stats(
     current_user: User = Depends(get_current_admin_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Получить статистику сети (только для админов).
@@ -361,7 +361,7 @@ async def get_network_stats(
 async def bulk_deploy_contracts(
     contract_ids: List[uuid.UUID] = Body(..., description="List of contract IDs to deploy"),
     current_user: User = Depends(get_current_admin_user),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Массовый деплой контрактов (только для админов).
@@ -402,7 +402,7 @@ async def bulk_deploy_contracts(
 @router.get("/utils/address/validate", response_model=Response[Dict[str, bool]])
 async def validate_ethereum_address(
     address: str = Query(..., description="Ethereum address to validate"),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Валидация Ethereum адреса.
@@ -430,7 +430,7 @@ async def validate_ethereum_address(
 @router.get("/utils/wei/convert", response_model=Response[Dict[str, str]])
 async def convert_wei_to_eth(
     wei_amount: str = Query(..., description="Amount in wei"),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Конвертация wei в ETH.
@@ -457,7 +457,7 @@ async def convert_wei_to_eth(
 @router.get("/utils/eth/convert", response_model=Response[Dict[str, str]])
 async def convert_eth_to_wei(
     eth_amount: str = Query(..., description="Amount in ETH"),
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Конвертация ETH в wei.
@@ -484,7 +484,7 @@ async def convert_eth_to_wei(
 # WebSocket эндпоинт для реального времени (если нужен)
 @router.get("/health", response_model=Response[Dict[str, Any]])
 async def blockchain_health_check(
-    blockchain_service: BlockchainService = Depends(get_blockchain_service)
+    blockchain_service: RealBlockchainService = Depends(get_blockchain_service)
 ) -> Any:
     """
     Проверка состояния блокчейн соединения.
