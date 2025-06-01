@@ -24,16 +24,24 @@ class UserService:
         self.db = db
     
     def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
+        """Get user by ID."""
+        return self.db.query(User).filter(User.id == user_id).first()
+    
+    def get_user_by_email(self, email: str) -> Optional[User]:
         """
-        Get user by ID.
+        Get user by email.
+        НОВЫЙ МЕТОД для поиска пользователя по email
         
         Args:
-            user_id: User ID
+            email: User email
             
         Returns:
-            User or None
+            User object or None
         """
-        return self.db.query(User).filter(User.id == user_id).first()
+        return self.db.query(User).filter(
+            User.email == email.lower().strip(),
+            User.status == UserStatus.ACTIVE
+        ).first()
     
     def get_user_profile(self, user_id: uuid.UUID) -> UserProfile:
         """

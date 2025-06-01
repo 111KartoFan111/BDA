@@ -143,23 +143,53 @@ class Settings(BaseSettings):
     def _load_deployed_addresses(self):
         """Load contract addresses from deployed file."""
         try:
-            deployed_file = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-                'smart-contracts', 'deployed', 'sepolia-addresses.json'
-            )
+            # Ищем файл с развернутыми адресами в нескольких местах
+            possible_paths = [
+                # В корне бэкенда
+                os.path.join(os.path.dirname(__file__), '..', '..', 'deployed-addresses.json'),
+                # В smart-contracts/deployed
+                os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                    'smart-contracts', 'deployed', 'sepolia-addresses.json'
+                ),
+                # В текущей директории
+                'deployed-addresses.json'
+            ]
             
-            if os.path.exists(deployed_file):
-                with open(deployed_file, 'r') as f:
-                    deployed_data = json.load(f)
-                    
+            deployed_data = None
+            used_path = None
+            
+            for deployed_file in possible_paths:
+                if os.path.exists(deployed_file):
+                    try:
+                        with open(deployed_file, 'r') as f:
+                            deployed_data = json.load(f)
+                            used_path = deployed_file
+                            break
+                    except Exception as e:
+                        print(f"Error reading {deployed_file}: {e}")
+                        continue
+            
+            if deployed_data:
                 # Update factory address if not set in environment variables
                 if not self.RENTAL_FACTORY_ADDRESS and 'RentalFactory' in deployed_data:
                     self.RENTAL_FACTORY_ADDRESS = deployed_data['RentalFactory']
-                    print(f"Loaded RENTAL_FACTORY_ADDRESS from deployed file: {self.RENTAL_FACTORY_ADDRESS}")
+                    print(f"✅ Loaded RENTAL_FACTORY_ADDRESS from {used_path}: {self.RENTAL_FACTORY_ADDRESS}")
+                
+                # Также загружаем другие полезные данные
+                if 'chainId' in deployed_data:
+                    print(f"📡 Target network: {deployed_data.get('network', 'unknown')} (Chain ID: {deployed_data['chainId']})")
+                
+                if 'deployedAt' in deployed_data:
+                    print(f"🕒 Contracts deployed at: {deployed_data['deployedAt']}")
                     
+            else:
+                print("⚠️  No deployed addresses file found. Please deploy smart contracts first.")
+                print("💡 Run: cd smart-contracts && npm run deploy")
+                
         except Exception as e:
-            print(f"Could not load deployed addresses: {e}")
-
+            print(f"❌ Could not load deployed addresses: {e}")
+            print("💡 Make sure smart contracts are deployed and addresses file exists")
 
 # Create settings instance with proper error handling
 try:

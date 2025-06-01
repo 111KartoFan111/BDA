@@ -10,6 +10,7 @@ import uuid
 from app.core.database import get_db
 from app.utils.dependencies import get_current_user, get_current_admin_user
 from app.services.contract import ContractService
+from app.services.user import UserService
 from app.schemas.contract import (
     ContractCreate, ContractUpdate, Contract, ContractDetail,
     ContractMessageCreate, ContractMessage, DisputeCreate, DisputeUpdate,
@@ -26,6 +27,72 @@ def get_contract_service(db: Session = Depends(get_db)) -> ContractService:
     """Get contract service dependency."""
     return ContractService(db)
 
+
+
+def get_contract_service(db: Session = Depends(get_db)) -> ContractService:
+    """Get contract service dependency."""
+    return ContractService(db)
+
+def get_user_service(db: Session = Depends(get_db)) -> UserService:
+    """Get user service dependency."""
+    return UserService(db)
+
+
+@router.post("", response_model=Response[Contract])
+async def create_contract(
+    contract_data: ContractCreate,
+    current_user: User = Depends(get_current_user),
+    contract_service: ContractService = Depends(get_contract_service),
+    user_service: UserService = Depends(get_user_service)
+) -> Any:
+    """
+    Create new rental contract.
+    ИСПРАВЛЕНО: Поддержка создания по email арендатора
+    """
+    try:
+        # Если указан tenant_email, находим пользователя
+        tenant_id = None
+        if hasattr(contract_data, 'tenant_email') and contract_data.tenant_email:
+            tenant_user = user_service.get_user_by_email(contract_data.tenant_email)
+            if not tenant_user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Пользователь с email {contract_data.tenant_email} не найден"
+                )
+            tenant_id = tenant_user.id
+        elif hasattr(contract_data, 'tenant_id') and contract_data.tenant_id:
+            tenant_id = contract_data.tenant_id
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Необходимо указать tenant_id или tenant_email"
+            )
+
+        # Создаем объект с правильными данными
+        create_data = ContractCreate(
+            item_id=contract_data.item_id,
+            tenant_id=tenant_id,
+            start_date=contract_data.start_date,
+            end_date=contract_data.end_date,
+            total_price=contract_data.total_price,
+            deposit=contract_data.deposit or 0,
+            terms=contract_data.terms or "",
+            special_conditions=contract_data.special_conditions or ""
+        )
+
+        contract = contract_service.create_contract(create_data, current_user.id)
+        
+        return Response(
+            data=contract,
+            message="Contract created successfully"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка создания контракта: {str(e)}"
+        )
 
 @router.get("", response_model=PaginatedResponse[Contract])
 async def get_user_contracts(
@@ -74,23 +141,6 @@ async def get_contract(
         )
     
     return Response(data=contract)
-
-
-@router.post("", response_model=Response[Contract])
-async def create_contract(
-    contract_data: ContractCreate,
-    current_user: User = Depends(get_current_user),
-    contract_service: ContractService = Depends(get_contract_service)
-) -> Any:
-    """
-    Create new rental contract.
-    """
-    contract = contract_service.create_contract(contract_data, current_user.id)
-    return Response(
-        data=contract,
-        message="Contract created successfully"
-    )
-
 
 @router.patch("/{contract_id}", response_model=Response[Contract])
 async def update_contract(
