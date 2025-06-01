@@ -1,14 +1,43 @@
 """
-Contract schemas for request/response validation.
+Исправленные схемы контракта с правильной сериализацией объектов.
+Заменяет backend/app/schemas/contract.py
 """
 
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, field_validator, ConfigDict
-from datetime import datetime,timezone,timedelta
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 import uuid
 
 from app.models.contract import ContractStatus, PaymentStatus, DisputeStatus
+
+
+class UserMinimal(BaseModel):
+    """Минимальная схема пользователя для контрактов."""
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: uuid.UUID
+    email: str
+    first_name: str
+    last_name: str
+    avatar: Optional[str] = None
+    is_verified: bool = False
+    rating: Optional[float] = None
+    total_reviews: int = 0
+
+
+class ItemMinimal(BaseModel):
+    """Минимальная схема товара для контрактов."""
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: uuid.UUID
+    title: str
+    description: str
+    price_per_day: Decimal
+    condition: str
+    location: Optional[str] = None
+    images: List[str] = []
+
 
 class ContractBase(BaseModel):
     """Base contract schema."""
@@ -80,6 +109,7 @@ class ContractCreate(ContractBase):
         
         return v
 
+
 class ContractUpdate(BaseModel):
     """Contract update schema."""
     start_date: Optional[datetime] = None
@@ -91,13 +121,21 @@ class ContractUpdate(BaseModel):
     status: Optional[ContractStatus] = None
 
 
-class ContractInDB(ContractBase):
-    """Contract schema for database operations."""
+class Contract(BaseModel):
+    """Основная схема контракта для API ответов."""
     model_config = ConfigDict(from_attributes=True)
     
     id: uuid.UUID
     tenant_id: uuid.UUID
     owner_id: uuid.UUID
+    item_id: uuid.UUID
+    start_date: datetime
+    end_date: datetime
+    total_price: Decimal
+    deposit: Decimal = 0
+    currency: str = "ETH"
+    terms: Optional[str] = None
+    special_conditions: Optional[str] = None
     status: ContractStatus
     tenant_signature: Optional[str] = None
     owner_signature: Optional[str] = None
@@ -118,14 +156,16 @@ class ContractInDB(ContractBase):
     updated_at: Optional[datetime] = None
 
 
-class Contract(ContractInDB):
-    """Public contract schema."""
-    tenant: Dict[str, Any] = {}
-    owner: Dict[str, Any] = {}
-    item: Dict[str, Any] = {}
+class ContractWithDetails(Contract):
+    """Схема контракта с деталями пользователей и товара."""
+    model_config = ConfigDict(from_attributes=True)
+    
+    tenant: UserMinimal
+    owner: UserMinimal
+    item: ItemMinimal
 
 
-class ContractDetail(Contract):
+class ContractDetail(ContractWithDetails):
     """Detailed contract schema."""
     messages: List['ContractMessage'] = []
     payments: List['Payment'] = []
@@ -168,7 +208,7 @@ class ContractMessage(ContractMessageBase):
     id: uuid.UUID
     contract_id: uuid.UUID
     sender_id: uuid.UUID
-    sender: Dict[str, Any] = {}
+    sender: UserMinimal
     is_read: bool = False
     is_system: bool = False
     created_at: datetime
@@ -201,7 +241,7 @@ class Payment(PaymentBase):
     id: uuid.UUID
     contract_id: uuid.UUID
     payer_id: uuid.UUID
-    payer: Dict[str, Any] = {}
+    payer: UserMinimal
     currency: str = "ETH"
     status: PaymentStatus
     transaction_hash: Optional[str] = None
@@ -249,11 +289,11 @@ class Dispute(DisputeBase):
     id: uuid.UUID
     contract_id: uuid.UUID
     complainant_id: uuid.UUID
-    complainant: Dict[str, Any] = {}
+    complainant: UserMinimal
     status: DisputeStatus
     priority: str = "normal"
     assigned_to: Optional[uuid.UUID] = None
-    assigned_admin: Optional[Dict[str, Any]] = None
+    assigned_admin: Optional[UserMinimal] = None
     resolution: Optional[str] = None
     resolution_date: Optional[datetime] = None
     compensation_amount: Decimal = 0
@@ -269,7 +309,7 @@ class ContractHistory(BaseModel):
     id: uuid.UUID
     contract_id: uuid.UUID
     user_id: Optional[uuid.UUID] = None
-    user: Optional[Dict[str, Any]] = None
+    user: Optional[UserMinimal] = None
     event_type: str
     description: Optional[str] = None
     old_value: Optional[Dict[str, Any]] = None
@@ -317,5 +357,5 @@ class ContractStats(BaseModel):
     status_distribution: Dict[str, int] = {}
 
 
-# Forward reference resolution - нужно делать после определения всех классов
+# Forward reference resolution
 ContractDetail.model_rebuild()

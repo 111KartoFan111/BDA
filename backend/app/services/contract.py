@@ -1,5 +1,5 @@
 """
-Исправленный ContractService с поддержкой timezone.
+Исправленный ContractService с правильной сериализацией данных.
 Замените метод create_contract в backend/app/services/contract.py
 """
 
@@ -19,7 +19,7 @@ from app.models.item import Item
 from app.models.user import User
 from app.schemas.contract import (
     ContractCreate, ContractUpdate, ContractMessageCreate,
-    PaymentCreate, DisputeCreate, DisputeUpdate
+    PaymentCreate, DisputeCreate, DisputeUpdate, UserMinimal, ItemMinimal
 )
 from app.schemas.common import PaginatedResponse, PaginationMeta
 from app.utils.exceptions import NotFoundError, ForbiddenError, BadRequestError
@@ -47,14 +47,104 @@ class ContractService:
         """Получить текущее время в UTC с timezone."""
         return datetime.now(pytz.UTC)
     
+    def _contract_to_dict(self, contract: Contract) -> Dict[str, Any]:
+        """
+        Преобразовать объект Contract в словарь для API ответа.
+        
+        Args:
+            contract: SQLAlchemy объект контракта
+            
+        Returns:
+            Словарь с данными контракта
+        """
+        # Базовые данные контракта
+        contract_data = {
+            "id": contract.id,
+            "tenant_id": contract.tenant_id,
+            "owner_id": contract.owner_id,
+            "item_id": contract.item_id,
+            "start_date": contract.start_date,
+            "end_date": contract.end_date,
+            "total_price": contract.total_price,
+            "deposit": contract.deposit,
+            "currency": contract.currency,
+            "terms": contract.terms,
+            "special_conditions": contract.special_conditions,
+            "status": contract.status,
+            "tenant_signature": contract.tenant_signature,
+            "owner_signature": contract.owner_signature,
+            "tenant_signed_at": contract.tenant_signed_at,
+            "owner_signed_at": contract.owner_signed_at,
+            "contract_address": contract.contract_address,
+            "transaction_hash": contract.transaction_hash,
+            "block_number": contract.block_number,
+            "payment_status": contract.payment_status,
+            "paid_amount": contract.paid_amount,
+            "deposit_paid": contract.deposit_paid,
+            "completed_at": contract.completed_at,
+            "cancelled_at": contract.cancelled_at,
+            "cancellation_reason": contract.cancellation_reason,
+            "extension_count": contract.extension_count,
+            "meta_info": contract.meta_info or {},
+            "created_at": contract.created_at,
+            "updated_at": contract.updated_at
+        }
+        
+        # Добавляем данные арендатора
+        if contract.tenant:
+            contract_data["tenant"] = {
+                "id": contract.tenant.id,
+                "email": contract.tenant.email,
+                "first_name": contract.tenant.first_name,
+                "last_name": contract.tenant.last_name,
+                "avatar": contract.tenant.avatar,
+                "is_verified": contract.tenant.is_verified,
+                "rating": float(contract.tenant.rating) if contract.tenant.rating else None,
+                "total_reviews": contract.tenant.total_reviews
+            }
+        
+        # Добавляем данные владельца
+        if contract.owner:
+            contract_data["owner"] = {
+                "id": contract.owner.id,
+                "email": contract.owner.email,
+                "first_name": contract.owner.first_name,
+                "last_name": contract.owner.last_name,
+                "avatar": contract.owner.avatar,
+                "is_verified": contract.owner.is_verified,
+                "rating": float(contract.owner.rating) if contract.owner.rating else None,
+                "total_reviews": contract.owner.total_reviews
+            }
+        
+        # Добавляем данные товара
+        if contract.item:
+            contract_data["item"] = {
+                "id": contract.item.id,
+                "title": contract.item.title,
+                "description": contract.item.description,
+                "price_per_day": contract.item.price_per_day,
+                "condition": contract.item.condition.value if hasattr(contract.item.condition, 'value') else str(contract.item.condition),
+                "location": contract.item.location,
+                "images": contract.item.images or []
+            }
+        
+        return contract_data
+    
     def create_contract(
         self, 
         contract_data: ContractCreate, 
         owner_id: uuid.UUID
-    ) -> Contract:
+    ) -> Dict[str, Any]:
         """
         Create new rental contract.
-        ИСПРАВЛЕНО: Корректная работа с timezone
+        ИСПРАВЛЕНО: Возвращает словарь вместо объекта SQLAlchemy
+        
+        Args:
+            contract_data: Contract creation data
+            owner_id: Owner user ID
+            
+        Returns:
+            Dictionary with contract data
         """
         # Validate item exists and is available
         item = self.db.query(Item).filter(Item.id == contract_data.item_id).first()
@@ -120,6 +210,13 @@ class ContractService:
         self.db.commit()
         self.db.refresh(contract)
         
+        # Загружаем связанные объекты
+        contract = self.db.query(Contract).options(
+            self.db.joinedload(Contract.tenant),
+            self.db.joinedload(Contract.owner),
+            self.db.joinedload(Contract.item)
+        ).filter(Contract.id == contract.id).first()
+        
         # Create history entry
         self._add_history_entry(
             contract.id,
@@ -130,7 +227,9 @@ class ContractService:
         # Send notifications
         self._send_contract_notifications(contract, "created")
         
-        return contract
+        # Возвращаем словарь вместо объекта SQLAlchemy
+        return self._contract_to_dict(contract)
+    
     def get_contract_by_id(
         self, 
         contract_id: uuid.UUID, 
@@ -207,11 +306,14 @@ class ContractService:
         offset = (page - 1) * size
         contracts = query.offset(offset).limit(size).all()
         
+        # Convert contracts to dictionaries
+        contracts_data = [self._contract_to_dict(contract) for contract in contracts]
+        
         # Calculate pagination meta_info
         pages = (total + size - 1) // size
         
         return PaginatedResponse(
-            items=contracts,
+            items=contracts_data,
             meta=PaginationMeta(
                 page=page,
                 size=size,
@@ -227,10 +329,10 @@ class ContractService:
         contract_id: uuid.UUID, 
         user_id: uuid.UUID, 
         signature: str
-    ) -> Contract:
+    ) -> Dict[str, Any]:
         """
         Sign contract.
-        ИСПРАВЛЕНО: Корректная работа с timezone
+        ИСПРАВЛЕНО: Возвращает словарь
         
         Args:
             contract_id: Contract ID
@@ -238,7 +340,7 @@ class ContractService:
             signature: Digital signature
             
         Returns:
-            Updated contract
+            Updated contract data
         """
         contract = self.get_contract_by_id(contract_id, user_id)
         if not contract:
@@ -272,29 +374,36 @@ class ContractService:
         contract.updated_at = now
         self.db.commit()
         
+        # Reload with relationships
+        contract = self.db.query(Contract).options(
+            self.db.joinedload(Contract.tenant),
+            self.db.joinedload(Contract.owner),
+            self.db.joinedload(Contract.item)
+        ).filter(Contract.id == contract_id).first()
+        
         # Add history entry
         self._add_history_entry(contract_id, "contract_signed", f"Contract {action}")
         
         # Send notifications
         self._send_contract_notifications(contract, "signed")
         
-        return contract
+        return self._contract_to_dict(contract)
     
     def complete_contract(
         self, 
         contract_id: uuid.UUID, 
         user_id: uuid.UUID
-    ) -> Contract:
+    ) -> Dict[str, Any]:
         """
         Complete rental contract.
-        ИСПРАВЛЕНО: Корректная работа с timezone
+        ИСПРАВЛЕНО: Возвращает словарь
         
         Args:
             contract_id: Contract ID
             user_id: User ID
             
         Returns:
-            Updated contract
+            Updated contract data
         """
         contract = self.get_contract_by_id(contract_id, user_id)
         if not contract:
@@ -317,6 +426,13 @@ class ContractService:
         if item:
             item.rentals_count = (item.rentals_count or 0) + 1
         
+        # Reload with relationships
+        contract = self.db.query(Contract).options(
+            self.db.joinedload(Contract.tenant),
+            self.db.joinedload(Contract.owner),
+            self.db.joinedload(Contract.item)
+        ).filter(Contract.id == contract_id).first()
+        
         # Add history entry
         self._add_history_entry(
             contract_id, 
@@ -327,17 +443,17 @@ class ContractService:
         # Send notifications
         self._send_contract_notifications(contract, "completed")
         
-        return contract
+        return self._contract_to_dict(contract)
     
     def cancel_contract(
         self, 
         contract_id: uuid.UUID, 
         user_id: uuid.UUID, 
         reason: str = ""
-    ) -> Contract:
+    ) -> Dict[str, Any]:
         """
         Cancel rental contract.
-        ИСПРАВЛЕНО: Корректная работа с timezone
+        ИСПРАВЛЕНО: Возвращает словарь
         
         Args:
             contract_id: Contract ID
@@ -345,7 +461,7 @@ class ContractService:
             reason: Cancellation reason
             
         Returns:
-            Updated contract
+            Updated contract data
         """
         contract = self.get_contract_by_id(contract_id, user_id)
         if not contract:
@@ -364,6 +480,13 @@ class ContractService:
         
         self.db.commit()
         
+        # Reload with relationships
+        contract = self.db.query(Contract).options(
+            self.db.joinedload(Contract.tenant),
+            self.db.joinedload(Contract.owner),
+            self.db.joinedload(Contract.item)
+        ).filter(Contract.id == contract_id).first()
+        
         # Add history entry
         self._add_history_entry(
             contract_id, 
@@ -374,10 +497,7 @@ class ContractService:
         # Send notifications
         self._send_contract_notifications(contract, "cancelled")
         
-        return contract
-    
-    # Остальные методы остаются без изменений...
-    # (все остальные методы из оригинального файла)
+        return self._contract_to_dict(contract)
     
     def _add_history_entry(
         self, 
@@ -412,7 +532,7 @@ class ContractService:
         )
         
         self.db.add(history_entry)
-    
+
     def _send_contract_notifications(
         self, 
         contract: Contract, 
@@ -425,65 +545,79 @@ class ContractService:
             contract: Contract object
             event_type: Event type
         """
+        from app.models.notification import NotificationType
+        
         notifications = {
             "created": {
                 "tenant": {
                     "title": "Rental Request Sent",
-                    "message": f"Your rental request for {contract.item.title} has been sent to the owner."
+                    "message": f"Your rental request for {contract.item.title} has been sent to the owner.",
+                    "type": NotificationType.RENTAL_REQUEST
                 },
                 "owner": {
                     "title": "New Rental Request",
-                    "message": f"You have a new rental request for {contract.item.title}."
+                    "message": f"You have a new rental request for {contract.item.title}.",
+                    "type": NotificationType.RENTAL_REQUEST
                 }
             },
             "signed": {
                 "tenant": {
                     "title": "Contract Signed",
-                    "message": f"Contract for {contract.item.title} has been signed."
+                    "message": f"Contract for {contract.item.title} has been signed.",
+                    "type": NotificationType.CONTRACT_SIGNED
                 },
                 "owner": {
                     "title": "Contract Signed",
-                    "message": f"Contract for {contract.item.title} has been signed."
+                    "message": f"Contract for {contract.item.title} has been signed.",
+                    "type": NotificationType.CONTRACT_SIGNED
                 }
             },
             "activated": {
                 "tenant": {
                     "title": "Contract Activated",
-                    "message": f"Your rental contract for {contract.item.title} is now active."
+                    "message": f"Your rental contract for {contract.item.title} is now active.",
+                    "type": NotificationType.CONTRACT_ACTIVATED
                 },
                 "owner": {
                     "title": "Contract Activated",
-                    "message": f"Rental contract for {contract.item.title} is now active."
+                    "message": f"Rental contract for {contract.item.title} is now active.",
+                    "type": NotificationType.CONTRACT_ACTIVATED
                 }
             },
             "completed": {
                 "tenant": {
                     "title": "Rental Completed",
-                    "message": f"Your rental of {contract.item.title} has been completed."
+                    "message": f"Your rental of {contract.item.title} has been completed.",
+                    "type": NotificationType.CONTRACT_COMPLETED
                 },
                 "owner": {
                     "title": "Rental Completed",
-                    "message": f"Rental of {contract.item.title} has been completed."
+                    "message": f"Rental of {contract.item.title} has been completed.",
+                    "type": NotificationType.CONTRACT_COMPLETED
                 }
             },
             "cancelled": {
                 "tenant": {
                     "title": "Contract Cancelled",
-                    "message": f"Contract for {contract.item.title} has been cancelled."
+                    "message": f"Contract for {contract.item.title} has been cancelled.",
+                    "type": NotificationType.CONTRACT_CANCELLED
                 },
                 "owner": {
                     "title": "Contract Cancelled",
-                    "message": f"Contract for {contract.item.title} has been cancelled."
+                    "message": f"Contract for {contract.item.title} has been cancelled.",
+                    "type": NotificationType.CONTRACT_CANCELLED
                 }
             },
             "disputed": {
                 "tenant": {
                     "title": "Dispute Created",
-                    "message": f"A dispute has been created for {contract.item.title}."
+                    "message": f"A dispute has been created for {contract.item.title}.",
+                    "type": NotificationType.DISPUTE_CREATED
                 },
                 "owner": {
                     "title": "Dispute Created",
-                    "message": f"A dispute has been created for {contract.item.title}."
+                    "message": f"A dispute has been created for {contract.item.title}.",
+                    "type": NotificationType.DISPUTE_CREATED
                 }
             }
         }
@@ -491,20 +625,22 @@ class ContractService:
         if event_type in notifications:
             # Send to tenant
             if contract.tenant_id and "tenant" in notifications[event_type]:
+                notification_data = notifications[event_type]["tenant"]
                 self.notification_service.create_notification(
                     user_id=contract.tenant_id,
-                    title=notifications[event_type]["tenant"]["title"],
-                    message=notifications[event_type]["tenant"]["message"],
-                    type="contract_update",
+                    title=notification_data["title"],
+                    message=notification_data["message"],
+                    type=notification_data["type"].value,  # Используем .value для enum
                     action_url=f"/contracts/{contract.id}"
                 )
             
             # Send to owner
             if contract.owner_id and "owner" in notifications[event_type]:
+                notification_data = notifications[event_type]["owner"]
                 self.notification_service.create_notification(
                     user_id=contract.owner_id,
-                    title=notifications[event_type]["owner"]["title"],
-                    message=notifications[event_type]["owner"]["message"],
-                    type="contract_update",
+                    title=notification_data["title"],
+                    message=notification_data["message"],
+                    type=notification_data["type"].value,  # Используем .value для enum
                     action_url=f"/contracts/{contract.id}"
                 )
