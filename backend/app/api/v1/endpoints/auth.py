@@ -46,6 +46,7 @@ async def register_user(
 async def login_user(
     credentials: UserLogin,
     auth_service: AuthService = Depends(get_auth_service)
+
 ) -> Any:
     """
     User login.
