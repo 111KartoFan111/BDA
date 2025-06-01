@@ -1,10 +1,10 @@
 """
-Исправленный ContractService с правильной сериализацией данных.
-Замените метод create_contract в backend/app/services/contract.py
+Полный исправленный ContractService с правильной сериализацией данных.
+Заменяет backend/app/services/contract.py
 """
 
 from typing import List, Optional, Dict, Any
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, or_, func, desc
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
@@ -91,7 +91,7 @@ class ContractService:
         }
         
         # Добавляем данные арендатора
-        if contract.tenant:
+        if hasattr(contract, 'tenant') and contract.tenant:
             contract_data["tenant"] = {
                 "id": contract.tenant.id,
                 "email": contract.tenant.email,
@@ -102,9 +102,23 @@ class ContractService:
                 "rating": float(contract.tenant.rating) if contract.tenant.rating else None,
                 "total_reviews": contract.tenant.total_reviews
             }
+        else:
+            # Загружаем арендатора отдельно
+            tenant = self.db.query(User).filter(User.id == contract.tenant_id).first()
+            if tenant:
+                contract_data["tenant"] = {
+                    "id": tenant.id,
+                    "email": tenant.email,
+                    "first_name": tenant.first_name,
+                    "last_name": tenant.last_name,
+                    "avatar": tenant.avatar,
+                    "is_verified": tenant.is_verified,
+                    "rating": float(tenant.rating) if tenant.rating else None,
+                    "total_reviews": tenant.total_reviews
+                }
         
         # Добавляем данные владельца
-        if contract.owner:
+        if hasattr(contract, 'owner') and contract.owner:
             contract_data["owner"] = {
                 "id": contract.owner.id,
                 "email": contract.owner.email,
@@ -115,9 +129,23 @@ class ContractService:
                 "rating": float(contract.owner.rating) if contract.owner.rating else None,
                 "total_reviews": contract.owner.total_reviews
             }
+        else:
+            # Загружаем владельца отдельно
+            owner = self.db.query(User).filter(User.id == contract.owner_id).first()
+            if owner:
+                contract_data["owner"] = {
+                    "id": owner.id,
+                    "email": owner.email,
+                    "first_name": owner.first_name,
+                    "last_name": owner.last_name,
+                    "avatar": owner.avatar,
+                    "is_verified": owner.is_verified,
+                    "rating": float(owner.rating) if owner.rating else None,
+                    "total_reviews": owner.total_reviews
+                }
         
         # Добавляем данные товара
-        if contract.item:
+        if hasattr(contract, 'item') and contract.item:
             contract_data["item"] = {
                 "id": contract.item.id,
                 "title": contract.item.title,
@@ -127,6 +155,19 @@ class ContractService:
                 "location": contract.item.location,
                 "images": contract.item.images or []
             }
+        else:
+            # Загружаем товар отдельно
+            item = self.db.query(Item).filter(Item.id == contract.item_id).first()
+            if item:
+                contract_data["item"] = {
+                    "id": item.id,
+                    "title": item.title,
+                    "description": item.description,
+                    "price_per_day": item.price_per_day,
+                    "condition": item.condition.value if hasattr(item.condition, 'value') else str(item.condition),
+                    "location": item.location,
+                    "images": item.images or []
+                }
         
         return contract_data
     
@@ -157,6 +198,30 @@ class ContractService:
         # Проверяем, что item принадлежит owner_id
         if item.owner_id != owner_id:
             raise BadRequestError("You can only create contracts for your own items")
+        
+        # Определяем tenant_id
+        tenant_id = None
+        
+        # Если указан tenant_email, находим пользователя
+        if contract_data.tenant_email:
+            from app.services.user import UserService
+            user_service = UserService(self.db)
+            tenant_user = user_service.get_user_by_email(contract_data.tenant_email)
+            if not tenant_user:
+                raise BadRequestError(f"User with email {contract_data.tenant_email} not found")
+            tenant_id = tenant_user.id
+        elif contract_data.tenant_id:
+            # Проверяем, что пользователь существует
+            tenant_user = self.db.query(User).filter(User.id == contract_data.tenant_id).first()
+            if not tenant_user:
+                raise BadRequestError(f"User with ID {contract_data.tenant_id} not found")
+            tenant_id = contract_data.tenant_id
+        else:
+            raise BadRequestError("Either tenant_id or tenant_email must be provided")
+        
+        # Проверяем, что арендатор не является владельцем
+        if tenant_id == owner_id:
+            raise BadRequestError("You cannot create a contract with yourself")
         
         # Убираем timezone из дат для корректного сравнения
         start_date = contract_data.start_date.replace(tzinfo=None) if contract_data.start_date.tzinfo else contract_data.start_date
@@ -194,7 +259,7 @@ class ContractService:
             raise BadRequestError("Item is already rented for the selected period")
         
         contract = Contract(
-            tenant_id=contract_data.tenant_id,
+            tenant_id=tenant_id,
             owner_id=owner_id,
             item_id=contract_data.item_id,
             start_date=start_date,
@@ -211,11 +276,15 @@ class ContractService:
         self.db.refresh(contract)
         
         # Загружаем связанные объекты
-        contract = self.db.query(Contract).options(
-            self.db.joinedload(Contract.tenant),
-            self.db.joinedload(Contract.owner),
-            self.db.joinedload(Contract.item)
-        ).filter(Contract.id == contract.id).first()
+        try:
+            contract = self.db.query(Contract).options(
+                joinedload(Contract.tenant),
+                joinedload(Contract.owner),
+                joinedload(Contract.item)
+            ).filter(Contract.id == contract.id).first()
+        except Exception as e:
+            # Если joinedload не работает, продолжаем без него
+            print(f"Warning: joinedload failed: {e}")
         
         # Create history entry
         self._add_history_entry(
@@ -225,7 +294,10 @@ class ContractService:
         )
         
         # Send notifications
-        self._send_contract_notifications(contract, "created")
+        try:
+            self._send_contract_notifications(contract, "created")
+        except Exception as e:
+            print(f"Warning: Failed to send notifications: {e}")
         
         # Возвращаем словарь вместо объекта SQLAlchemy
         return self._contract_to_dict(contract)
@@ -324,6 +396,34 @@ class ContractService:
             )
         )
     
+    def update_contract(
+        self, 
+        contract_id: uuid.UUID, 
+        contract_data: ContractUpdate, 
+        user_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Update contract (limited fields).
+        """
+        contract = self.get_contract_by_id(contract_id, user_id)
+        if not contract:
+            raise NotFoundError("Contract", str(contract_id))
+        
+        # Only allow updates if contract is in PENDING or DRAFT status
+        if contract.status not in [ContractStatus.PENDING]:
+            raise BadRequestError("Contract cannot be updated in current status")
+        
+        # Update fields
+        update_data = contract_data.dict(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(contract, field, value)
+        
+        contract.updated_at = datetime.utcnow()
+        self.db.commit()
+        self.db.refresh(contract)
+        
+        return self._contract_to_dict(contract)
+    
     def sign_contract(
         self, 
         contract_id: uuid.UUID, 
@@ -349,7 +449,7 @@ class ContractService:
         if contract.status != ContractStatus.PENDING:
             raise BadRequestError("Contract is not in pending status")
         
-        now = self._get_current_utc_time().replace(tzinfo=None)  # Убираем timezone для БД
+        now = datetime.utcnow()
         
         if contract.tenant_id == user_id:
             if contract.tenant_signature:
@@ -374,18 +474,14 @@ class ContractService:
         contract.updated_at = now
         self.db.commit()
         
-        # Reload with relationships
-        contract = self.db.query(Contract).options(
-            self.db.joinedload(Contract.tenant),
-            self.db.joinedload(Contract.owner),
-            self.db.joinedload(Contract.item)
-        ).filter(Contract.id == contract_id).first()
-        
         # Add history entry
         self._add_history_entry(contract_id, "contract_signed", f"Contract {action}")
         
         # Send notifications
-        self._send_contract_notifications(contract, "signed")
+        try:
+            self._send_contract_notifications(contract, "signed")
+        except Exception as e:
+            print(f"Warning: Failed to send notifications: {e}")
         
         return self._contract_to_dict(contract)
     
@@ -412,7 +508,7 @@ class ContractService:
         if contract.status != ContractStatus.ACTIVE:
             raise BadRequestError("Only active contracts can be completed")
         
-        now = self._get_current_utc_time().replace(tzinfo=None)
+        now = datetime.utcnow()
         
         contract.status = ContractStatus.COMPLETED
         contract.completed_at = now
@@ -426,13 +522,6 @@ class ContractService:
         if item:
             item.rentals_count = (item.rentals_count or 0) + 1
         
-        # Reload with relationships
-        contract = self.db.query(Contract).options(
-            self.db.joinedload(Contract.tenant),
-            self.db.joinedload(Contract.owner),
-            self.db.joinedload(Contract.item)
-        ).filter(Contract.id == contract_id).first()
-        
         # Add history entry
         self._add_history_entry(
             contract_id, 
@@ -441,7 +530,10 @@ class ContractService:
         )
         
         # Send notifications
-        self._send_contract_notifications(contract, "completed")
+        try:
+            self._send_contract_notifications(contract, "completed")
+        except Exception as e:
+            print(f"Warning: Failed to send notifications: {e}")
         
         return self._contract_to_dict(contract)
     
@@ -470,7 +562,7 @@ class ContractService:
         if contract.status not in [ContractStatus.PENDING, ContractStatus.SIGNED, ContractStatus.ACTIVE]:
             raise BadRequestError("Contract cannot be cancelled in current status")
         
-        now = self._get_current_utc_time().replace(tzinfo=None)
+        now = datetime.utcnow()
         
         contract.status = ContractStatus.CANCELLED
         contract.cancelled_at = now
@@ -480,13 +572,6 @@ class ContractService:
         
         self.db.commit()
         
-        # Reload with relationships
-        contract = self.db.query(Contract).options(
-            self.db.joinedload(Contract.tenant),
-            self.db.joinedload(Contract.owner),
-            self.db.joinedload(Contract.item)
-        ).filter(Contract.id == contract_id).first()
-        
         # Add history entry
         self._add_history_entry(
             contract_id, 
@@ -495,9 +580,261 @@ class ContractService:
         )
         
         # Send notifications
-        self._send_contract_notifications(contract, "cancelled")
+        try:
+            self._send_contract_notifications(contract, "cancelled")
+        except Exception as e:
+            print(f"Warning: Failed to send notifications: {e}")
         
         return self._contract_to_dict(contract)
+    
+    def extend_contract(
+        self, 
+        contract_id: uuid.UUID, 
+        new_end_date: datetime,
+        additional_price: float,
+        user_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Extend contract duration.
+        """
+        contract = self.get_contract_by_id(contract_id, user_id)
+        if not contract:
+            raise NotFoundError("Contract", str(contract_id))
+        
+        if contract.status not in [ContractStatus.ACTIVE, ContractStatus.SIGNED]:
+            raise BadRequestError("Contract cannot be extended in current status")
+        
+        # Validate new end date
+        if new_end_date <= contract.end_date:
+            raise BadRequestError("New end date must be after current end date")
+        
+        # Store original end date if not already stored
+        if not contract.original_end_date:
+            contract.original_end_date = contract.end_date
+        
+        contract.end_date = new_end_date
+        contract.total_price += additional_price
+        contract.extension_count = (contract.extension_count or 0) + 1
+        contract.updated_at = datetime.utcnow()
+        
+        self.db.commit()
+        
+        # Add history entry
+        self._add_history_entry(
+            contract_id,
+            "contract_extended",
+            f"Contract extended until {new_end_date.strftime('%Y-%m-%d')}"
+        )
+        
+        return self._contract_to_dict(contract)
+    
+    def get_contract_messages(
+        self, 
+        contract_id: uuid.UUID, 
+        user_id: uuid.UUID,
+        page: int = 1,
+        size: int = 50
+    ) -> PaginatedResponse:
+        """
+        Get contract messages.
+        """
+        # Verify access to contract
+        contract = self.get_contract_by_id(contract_id, user_id)
+        if not contract:
+            raise NotFoundError("Contract", str(contract_id))
+        
+        query = self.db.query(ContractMessage).filter(
+            ContractMessage.contract_id == contract_id
+        ).order_by(desc(ContractMessage.created_at))
+        
+        total = query.count()
+        offset = (page - 1) * size
+        messages = query.offset(offset).limit(size).all()
+        
+        pages = (total + size - 1) // size
+        
+        return PaginatedResponse(
+            items=messages,
+            meta=PaginationMeta(
+                page=page,
+                size=size,
+                total=total,
+                pages=pages,
+                has_next=page < pages,
+                has_prev=page > 1
+            )
+        )
+    
+    def add_contract_message(
+        self, 
+        contract_id: uuid.UUID, 
+        message_data: ContractMessageCreate,
+        user_id: uuid.UUID
+    ) -> ContractMessage:
+        """
+        Add message to contract chat.
+        """
+        # Verify access to contract
+        contract = self.get_contract_by_id(contract_id, user_id)
+        if not contract:
+            raise NotFoundError("Contract", str(contract_id))
+        
+        message = ContractMessage(
+            contract_id=contract_id,
+            sender_id=user_id,
+            message=message_data.message,
+            message_type=message_data.message_type,
+            attachments=message_data.attachments
+        )
+        
+        self.db.add(message)
+        self.db.commit()
+        self.db.refresh(message)
+        
+        return message
+    
+    def get_contract_history(self, contract_id: uuid.UUID, user_id: uuid.UUID) -> List[Dict]:
+        """
+        Get contract history.
+        """
+        # Verify access to contract
+        contract = self.get_contract_by_id(contract_id, user_id)
+        if not contract:
+            raise NotFoundError("Contract", str(contract_id))
+        
+        history = self.db.query(ContractHistory).filter(
+            ContractHistory.contract_id == contract_id
+        ).order_by(desc(ContractHistory.created_at)).all()
+        
+        return [
+            {
+                "id": entry.id,
+                "event_type": entry.event_type,
+                "description": entry.description,
+                "created_at": entry.created_at,
+                "user_id": entry.user_id
+            }
+            for entry in history
+        ]
+    
+    def create_dispute(
+        self, 
+        contract_id: uuid.UUID, 
+        dispute_data: DisputeCreate,
+        user_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Create dispute for contract.
+        """
+        # Verify access to contract
+        contract = self.get_contract_by_id(contract_id, user_id)
+        if not contract:
+            raise NotFoundError("Contract", str(contract_id))
+        
+        if contract.status not in [ContractStatus.ACTIVE, ContractStatus.COMPLETED]:
+            raise BadRequestError("Disputes can only be created for active or completed contracts")
+        
+        dispute = Dispute(
+            contract_id=contract_id,
+            complainant_id=user_id,
+            reason=dispute_data.reason,
+            description=dispute_data.description,
+            evidence=dispute_data.evidence
+        )
+        
+        self.db.add(dispute)
+        
+        # Update contract status
+        contract.status = ContractStatus.DISPUTED
+        
+        self.db.commit()
+        self.db.refresh(dispute)
+        
+        # Add history entry
+        self._add_history_entry(
+            contract_id,
+            "dispute_created",
+            f"Dispute created: {dispute_data.reason}"
+        )
+        
+        return {
+            "id": dispute.id,
+            "contract_id": dispute.contract_id,
+            "reason": dispute.reason,
+            "description": dispute.description,
+            "status": dispute.status,
+            "created_at": dispute.created_at
+        }
+    
+    def get_contract_stats(self, user_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        """
+        Get contract statistics.
+        """
+        query = self.db.query(Contract)
+        
+        if user_id:
+            query = query.filter(
+                or_(Contract.owner_id == user_id, Contract.tenant_id == user_id)
+            )
+        
+        contracts = query.all()
+        
+        stats = {
+            "total_contracts": len(contracts),
+            "active_contracts": len([c for c in contracts if c.status == ContractStatus.ACTIVE]),
+            "completed_contracts": len([c for c in contracts if c.status == ContractStatus.COMPLETED]),
+            "cancelled_contracts": len([c for c in contracts if c.status == ContractStatus.CANCELLED]),
+            "disputed_contracts": len([c for c in contracts if c.status == ContractStatus.DISPUTED]),
+            "total_volume": sum(float(c.total_price) for c in contracts if c.status == ContractStatus.COMPLETED),
+            "average_contract_value": 0.0,
+            "status_distribution": {}
+        }
+        
+        if stats["completed_contracts"] > 0:
+            stats["average_contract_value"] = stats["total_volume"] / stats["completed_contracts"]
+        
+        # Status distribution
+        for contract in contracts:
+            status_name = contract.status.value
+            stats["status_distribution"][status_name] = stats["status_distribution"].get(status_name, 0) + 1
+        
+        return stats
+    
+    def get_all_contracts(
+        self,
+        status: Optional[ContractStatus] = None,
+        page: int = 1,
+        size: int = 20
+    ) -> PaginatedResponse:
+        """
+        Get all contracts (admin only).
+        """
+        query = self.db.query(Contract)
+        
+        if status:
+            query = query.filter(Contract.status == status)
+        
+        query = query.order_by(desc(Contract.created_at))
+        
+        total = query.count()
+        offset = (page - 1) * size
+        contracts = query.offset(offset).limit(size).all()
+        
+        contracts_data = [self._contract_to_dict(contract) for contract in contracts]
+        
+        pages = (total + size - 1) // size
+        
+        return PaginatedResponse(
+            items=contracts_data,
+            meta=PaginationMeta(
+                page=page,
+                size=size,
+                total=total,
+                pages=pages,
+                has_next=page < pages,
+                has_prev=page > 1
+            )
+        )
     
     def _add_history_entry(
         self, 
@@ -519,8 +856,6 @@ class ContractService:
             old_value: Optional old value
             new_value: Optional new value
         """
-        from app.models.contract import ContractHistory
-        
         history_entry = ContractHistory(
             contract_id=contract_id,
             user_id=user_id,
@@ -528,7 +863,7 @@ class ContractService:
             description=description,
             old_value=old_value,
             new_value=new_value,
-            created_at=self._get_current_utc_time().replace(tzinfo=None)
+            created_at=datetime.utcnow()
         )
         
         self.db.add(history_entry)
@@ -551,96 +886,101 @@ class ContractService:
             "created": {
                 "tenant": {
                     "title": "Rental Request Sent",
-                    "message": f"Your rental request for {contract.item.title} has been sent to the owner.",
+                    "message": f"Your rental request for item has been sent to the owner.",
                     "type": NotificationType.RENTAL_REQUEST
                 },
                 "owner": {
                     "title": "New Rental Request",
-                    "message": f"You have a new rental request for {contract.item.title}.",
+                    "message": f"You have a new rental request for your item.",
                     "type": NotificationType.RENTAL_REQUEST
                 }
             },
             "signed": {
                 "tenant": {
                     "title": "Contract Signed",
-                    "message": f"Contract for {contract.item.title} has been signed.",
+                    "message": f"Contract has been signed.",
                     "type": NotificationType.CONTRACT_SIGNED
                 },
                 "owner": {
                     "title": "Contract Signed",
-                    "message": f"Contract for {contract.item.title} has been signed.",
+                    "message": f"Contract has been signed.",
                     "type": NotificationType.CONTRACT_SIGNED
                 }
             },
             "activated": {
                 "tenant": {
                     "title": "Contract Activated",
-                    "message": f"Your rental contract for {contract.item.title} is now active.",
+                    "message": f"Your rental contract is now active.",
                     "type": NotificationType.CONTRACT_ACTIVATED
                 },
                 "owner": {
                     "title": "Contract Activated",
-                    "message": f"Rental contract for {contract.item.title} is now active.",
+                    "message": f"Rental contract is now active.",
                     "type": NotificationType.CONTRACT_ACTIVATED
                 }
             },
             "completed": {
                 "tenant": {
                     "title": "Rental Completed",
-                    "message": f"Your rental of {contract.item.title} has been completed.",
+                    "message": f"Your rental has been completed.",
                     "type": NotificationType.CONTRACT_COMPLETED
                 },
                 "owner": {
                     "title": "Rental Completed",
-                    "message": f"Rental of {contract.item.title} has been completed.",
+                    "message": f"Rental has been completed.",
                     "type": NotificationType.CONTRACT_COMPLETED
                 }
             },
             "cancelled": {
                 "tenant": {
                     "title": "Contract Cancelled",
-                    "message": f"Contract for {contract.item.title} has been cancelled.",
+                    "message": f"Contract has been cancelled.",
                     "type": NotificationType.CONTRACT_CANCELLED
                 },
                 "owner": {
                     "title": "Contract Cancelled",
-                    "message": f"Contract for {contract.item.title} has been cancelled.",
+                    "message": f"Contract has been cancelled.",
                     "type": NotificationType.CONTRACT_CANCELLED
                 }
             },
             "disputed": {
                 "tenant": {
                     "title": "Dispute Created",
-                    "message": f"A dispute has been created for {contract.item.title}.",
+                    "message": f"A dispute has been created.",
                     "type": NotificationType.DISPUTE_CREATED
                 },
                 "owner": {
                     "title": "Dispute Created",
-                    "message": f"A dispute has been created for {contract.item.title}.",
+                    "message": f"A dispute has been created.",
                     "type": NotificationType.DISPUTE_CREATED
                 }
             }
         }
         
-        if event_type in notifications:
-            # Send to tenant
-            if contract.tenant_id and "tenant" in notifications[event_type]:
-                notification_data = notifications[event_type]["tenant"]
-                self.notification_service.create_notification(
-                    user_id=contract.tenant_id,
-                    title=notification_data["title"],
-                    message=notification_data["message"],
-                    type=notification_data["type"].value,  # Используем .value для enum
-                    action_url=f"/contracts/{contract.id}"
-                )
-            
-            # Send to owner
-            if contract.owner_id and "owner" in notifications[event_type]:
-                notification_data = notifications[event_type]["owner"]
-                self.notification_service.create_notification(
-                    user_id=contract.owner_id,
-                    title=notification_data["title"],
-                    message=notification_data["message"],
-                    type=notification_data["type"].value,  # Используем .value для enum
-                    action_url=f"/contracts/{contract.id}"
-                )
+        try:
+            if event_type in notifications:
+                # Send to tenant
+                if contract.tenant_id and "tenant" in notifications[event_type]:
+                    notification_data = notifications[event_type]["tenant"]
+                    self.notification_service.create_notification(
+                        user_id=contract.tenant_id,
+                        title=notification_data["title"],
+                        message=notification_data["message"],
+                        type=notification_data["type"].value,
+                        action_url=f"/contracts/{contract.id}"
+                    )
+                
+                # Send to owner
+                if contract.owner_id and "owner" in notifications[event_type]:
+                    notification_data = notifications[event_type]["owner"]
+                    self.notification_service.create_notification(
+                        user_id=contract.owner_id,
+                        title=notification_data["title"],
+                        message=notification_data["message"],
+                        type=notification_data["type"].value,
+                        action_url=f"/contracts/{contract.id}"
+                    )
+        except Exception as e:
+            # Don't fail the main operation if notifications fail
+            print(f"Warning: Failed to send notifications: {e}")
+            pass

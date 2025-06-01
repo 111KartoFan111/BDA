@@ -1,13 +1,14 @@
 """
-Исправленные схемы контракта с правильной сериализацией объектов.
+Исправленные схемы контракта с правильной валидацией Pydantic v2.
 Заменяет backend/app/schemas/contract.py
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, field_validator, ConfigDict
+from pydantic import BaseModel, field_validator, ConfigDict, model_validator
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 import uuid
+
 
 from app.models.contract import ContractStatus, PaymentStatus, DisputeStatus
 
@@ -97,17 +98,16 @@ class ContractCreate(ContractBase):
     tenant_id: Optional[uuid.UUID] = None
     tenant_email: Optional[str] = None
     
-    @field_validator('tenant_id', 'tenant_email')
-    @classmethod
-    def validate_tenant_info(cls, v, info):
-        # Проверяем, что указан либо tenant_id, либо tenant_email
-        tenant_id = info.data.get('tenant_id') if hasattr(info, 'data') else v if info.field_name == 'tenant_id' else None
-        tenant_email = info.data.get('tenant_email') if hasattr(info, 'data') else v if info.field_name == 'tenant_email' else None
+    @model_validator(mode='after')
+    def validate_tenant_info(self):
+        """Проверяем, что указан либо tenant_id, либо tenant_email."""
+        tenant_id = self.tenant_id
+        tenant_email = self.tenant_email
         
         if not tenant_id and not tenant_email:
             raise ValueError('Either tenant_id or tenant_email must be provided')
         
-        return v
+        return self
 
 
 class ContractUpdate(BaseModel):

@@ -49,43 +49,14 @@ async def create_contract(
 ) -> Any:
     """
     Create new rental contract.
-    ОБНОВЛЕНО: Поддержка создания по email арендатора + готовность к блокчейну
+    ИСПРАВЛЕНО: Упрощена логика обработки
     """
     try:
-        # Если указан tenant_email, находим пользователя
-        tenant_id = None
-        if hasattr(contract_data, 'tenant_email') and contract_data.tenant_email:
-            tenant_user = user_service.get_user_by_email(contract_data.tenant_email)
-            if not tenant_user:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Пользователь с email {contract_data.tenant_email} не найден"
-                )
-            tenant_id = tenant_user.id
-        elif hasattr(contract_data, 'tenant_id') and contract_data.tenant_id:
-            tenant_id = contract_data.tenant_id
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Необходимо указать tenant_id или tenant_email"
-            )
-
-        # Создаем объект с правильными данными
-        create_data = ContractCreate(
-            item_id=contract_data.item_id,
-            tenant_id=tenant_id,
-            start_date=contract_data.start_date,
-            end_date=contract_data.end_date,
-            total_price=contract_data.total_price,
-            deposit=contract_data.deposit or 0,
-            terms=contract_data.terms or "",
-            special_conditions=contract_data.special_conditions or ""
-        )
-
-        contract = contract_service.create_contract(create_data, current_user.id)
+        # Создаем контракт через сервис
+        contract_dict = contract_service.create_contract(contract_data, current_user.id)
         
         return Response(
-            data=contract,
+            data=contract_dict,
             message="Contract created successfully. After signing by both parties, it can be deployed to blockchain."
         )
     except HTTPException:
@@ -93,9 +64,8 @@ async def create_contract(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Ошибка создания контракта: {str(e)}"
+            detail=f"Error creating contract: {str(e)}"
         )
-
 
 @router.post("/{contract_id}/deploy-to-blockchain", response_model=Response[dict])
 async def deploy_contract_to_blockchain(
