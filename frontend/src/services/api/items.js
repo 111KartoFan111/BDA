@@ -1,4 +1,4 @@
-// frontend/src/services/api/items.js
+// frontend/src/services/api/items.js - ИСПРАВЛЕННАЯ ВЕРСИЯ
 import { apiRequest } from './base'
 
 export const itemsAPI = {
@@ -132,14 +132,22 @@ export const itemsAPI = {
     return apiRequest.get('/v1/items/favorites', { params })
   },
 
-  // Создание запроса на аренду
+  // ИСПРАВЛЕННЫЙ МЕТОД: Создание запроса на аренду
   createRentalRequest: (id, requestData) => {
-    return apiRequest.post(`/v1/items/${id}/rental-request`, {
-      startDate: requestData.startDate,
-      endDate: requestData.endDate,
-      message: requestData.message,
-      totalPrice: requestData.totalPrice,
-    })
+    console.log('Creating rental request with data:', requestData)
+    
+    // Убеждаемся что отправляем данные в правильном формате
+    // НЕ включаем item_id, так как он уже в URL
+    const backendData = {
+      start_date: requestData.start_date,
+      end_date: requestData.end_date,
+      total_price: requestData.total_price,
+      message: requestData.message
+    }
+    
+    console.log('Sending rental request to backend:', backendData)
+    
+    return apiRequest.post(`/v1/items/${id}/rental-request`, backendData)
   },
 
   // Получение запросов на аренду для товара

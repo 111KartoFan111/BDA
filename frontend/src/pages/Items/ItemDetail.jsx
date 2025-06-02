@@ -1,4 +1,4 @@
-// frontend/src/pages/Items/ItemDetail.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ
+// frontend/src/pages/Items/ItemDetail.jsx - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
@@ -13,7 +13,7 @@ import {
   Shield,
   Clock,
   DollarSign,
-  FileText // НОВЫЙ ИМПОРТ
+  FileText
 } from 'lucide-react'
 import { itemsAPI } from '../../services/api/items'
 import { useAuth } from '../../context/AuthContext'
@@ -23,7 +23,39 @@ import Card from '../../components/UI/Card/Card'
 import Loader from '../../components/UI/Loader/Loader'
 import Modal from '../../components/UI/Modal/Modal'
 import { formatCurrency, formatDate } from '../../services/utils/formatting'
+import toast from 'react-hot-toast'
 import styles from './Items.module.css'
+
+// Утилиты для работы с датами
+const formatDateForAPI = (dateString, endOfDay = false) => {
+  if (!dateString) return null
+  
+  try {
+    // Создаем дату в UTC
+    const date = new Date(dateString + 'T' + (endOfDay ? '23:59:59' : '00:00:00') + '.000Z')
+    return date.toISOString()
+  } catch (error) {
+    console.error('Error formatting date:', error)
+    return null
+  }
+}
+
+const getDaysDifference = (startDate, endDate) => {
+  if (!startDate || !endDate) return 0
+  
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0
+  
+  const diffTime = Math.abs(end - start)
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
+
+const getTodayString = () => {
+  const today = new Date()
+  return today.toISOString().split('T')[0]
+}
 
 const ItemDetail = () => {
   const { id } = useParams()
@@ -39,14 +71,22 @@ const ItemDetail = () => {
   })
 
   const { 
-    data: item, 
+    data: response, 
     loading, 
     error 
   } = useApi(() => itemsAPI.getItem(id), [id])
 
+  // Извлекаем данные товара из ответа API
+  const item = response?.data?.data || response?.data || null
+
+  console.log('API Response:', response)
+  console.log('Extracted Item:', item)
+
   const { 
-    data: similarItems 
+    data: similarResponse 
   } = useApi(() => itemsAPI.getSimilarItems(id), [id], { immediate: false })
+
+  const similarItems = similarResponse?.data?.data || similarResponse?.data || []
 
   useEffect(() => {
     if (item) {
@@ -88,7 +128,6 @@ const ItemDetail = () => {
     setIsRentalModalOpen(true)
   }
 
-  // НОВЫЙ МЕТОД: Создание контракта аренды
   const handleCreateContract = () => {
     if (!isAuthenticated) {
       navigate('/login')
@@ -109,22 +148,87 @@ const ItemDetail = () => {
 
   const handleRentalSubmit = async () => {
     try {
-      const totalDays = Math.ceil(
-        (new Date(rentalDates.endDate) - new Date(rentalDates.startDate)) / 
-        (1000 * 60 * 60 * 24)
-      )
-      const totalPrice = totalDays * item.pricePerDay
+      // Проверяем валидность дат
+      if (!rentalDates.startDate || !rentalDates.endDate) {
+        toast.error('Выберите даты аренды')
+        return
+      }
 
-      await itemsAPI.createRentalRequest(id, {
-        ...rentalDates,
+      // Проверяем что дата окончания после даты начала
+      if (new Date(rentalDates.endDate) <= new Date(rentalDates.startDate)) {
+        toast.error('Дата окончания должна быть позже даты начала')
+        return
+      }
+
+      // Используем утилиту для подсчета дней
+      const totalDays = getDaysDifference(rentalDates.startDate, rentalDates.endDate)
+      const totalPrice = totalDays * parseFloat(item.price_per_day)
+
+      // Преобразуем даты в ISO формат для бэкенда
+      const startDate = formatDateForAPI(rentalDates.startDate, false)
+      const endDate = formatDateForAPI(rentalDates.endDate, true)
+
+      console.log('Отправляем запрос на аренду:', {
+        startDate,
+        endDate,
         totalPrice,
-        message: 'Запрос на аренду'
+        totalDays,
+        originalDates: rentalDates,
+        itemId: id
       })
 
+      const requestData = {
+        start_date: startDate,
+        end_date: endDate,
+        total_price: totalPrice,
+        message: 'Запрос на аренду через карточку товара'
+      }
+
+      console.log('Данные запроса (без item_id):', requestData)
+
+      await itemsAPI.createRentalRequest(id, requestData)
+
       setIsRentalModalOpen(false)
-      // Показать успешное сообщение или перенаправить
+      // Очищаем даты после успешного запроса
+      setRentalDates({ startDate: '', endDate: '' })
+      toast.success('Запрос на аренду успешно отправлен!')
     } catch (error) {
-      console.error('Error creating rental request:', error)
+      console.error('Ошибка создания запроса на аренду:', error)
+      
+      // Детальная обработка ошибок валидации
+      let errorMessage = 'Ошибка при отправке запроса на аренду'
+      
+      if (error.response?.status === 422 && error.response?.data?.details) {
+        const validationErrors = error.response.data.details
+        if (Array.isArray(validationErrors)) {
+          const errorMessages = validationErrors.map(err => {
+            const field = err.loc?.slice(-1)[0] || 'поле'
+            const fieldTranslations = {
+              'start_date': 'Дата начала',
+              'end_date': 'Дата окончания',
+              'total_price': 'Общая стоимость',
+              'message': 'Сообщение'
+            }
+            
+            let message = err.msg
+            if (message.includes('Field required')) {
+              message = 'Обязательное поле'
+            } else if (message.includes('Input should be a valid datetime')) {
+              message = 'Неверный формат даты'
+            }
+            
+            const fieldName = fieldTranslations[field] || field
+            return `${fieldName}: ${message}`
+          })
+          errorMessage = errorMessages.join('\n')
+        }
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage)
     }
   }
 
@@ -141,7 +245,12 @@ const ItemDetail = () => {
       }
     } else {
       // Fallback: копируем ссылку в буфер обмена
-      navigator.clipboard.writeText(window.location.href)
+      try {
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success('Ссылка скопирована в буфер обмена')
+      } catch (error) {
+        console.error('Error copying to clipboard:', error)
+      }
     }
   }
 
@@ -166,7 +275,11 @@ const ItemDetail = () => {
   }
 
   const isOwner = user?.id === item.owner?.id
-  const canRent = !isOwner && item.isAvailable && isAuthenticated
+  const canRent = !isOwner && item.is_available && isAuthenticated
+
+  // Вычисляем итоговую стоимость для отображения
+  const totalDays = getDaysDifference(rentalDates.startDate, rentalDates.endDate)
+  const totalPrice = totalDays > 0 ? totalDays * parseFloat(item.price_per_day || 0) : 0
 
   return (
     <div className={styles.itemDetail}>
@@ -187,11 +300,14 @@ const ItemDetail = () => {
           <div className={styles.imageGallery}>
             <div className={styles.mainImage}>
               <img
-                src={item.images?.[currentImageIndex] || '/placeholder-image.jpg'}
+                src={item.images?.[currentImageIndex] ? 
+                  `http://localhost:8000${item.images[currentImageIndex]}` : 
+                  '/placeholder-image.jpg'
+                }
                 alt={item.title}
                 className={styles.image}
               />
-              {!item.isAvailable && (
+              {!item.is_available && (
                 <div className={styles.unavailableOverlay}>
                   <span>Недоступно</span>
                 </div>
@@ -208,7 +324,10 @@ const ItemDetail = () => {
                       index === currentImageIndex ? styles.active : ''
                     }`}
                   >
-                    <img src={image} alt={`${item.title} ${index + 1}`} />
+                    <img 
+                      src={`http://localhost:8000${image}`} 
+                      alt={`${item.title} ${index + 1}`} 
+                    />
                   </button>
                 ))}
               </div>
@@ -227,7 +346,7 @@ const ItemDetail = () => {
                       {item.location}
                     </span>
                   )}
-                  <span className={styles.category}>{item.category}</span>
+                  <span className={styles.category}>{item.category?.name}</span>
                 </div>
               </div>
 
@@ -254,7 +373,7 @@ const ItemDetail = () => {
             <Card className={styles.rentalCard}>
               <div className={styles.priceSection}>
                 <div className={styles.price}>
-                  {formatCurrency(item.pricePerDay)}
+                  {formatCurrency(item.price_per_day)}
                   <span className={styles.period}>/день</span>
                 </div>
                 {item.rating && (
@@ -262,7 +381,7 @@ const ItemDetail = () => {
                     <Star size={16} fill="currentColor" />
                     <span>{item.rating.toFixed(1)}</span>
                     <span className={styles.reviewsCount}>
-                      ({item.reviewsCount} отзывов)
+                      ({item.total_reviews} отзывов)
                     </span>
                   </div>
                 )}
@@ -280,7 +399,7 @@ const ItemDetail = () => {
                           ...prev,
                           startDate: e.target.value
                         }))}
-                        min={new Date().toISOString().split('T')[0]}
+                        min={getTodayString()}
                       />
                     </div>
                     <div className={styles.dateInput}>
@@ -292,10 +411,18 @@ const ItemDetail = () => {
                           ...prev,
                           endDate: e.target.value
                         }))}
-                        min={rentalDates.startDate || new Date().toISOString().split('T')[0]}
+                        min={rentalDates.startDate || getTodayString()}
                       />
                     </div>
                   </div>
+
+                  {/* Показываем предварительную стоимость */}
+                  {totalDays > 0 && (
+                    <div className={styles.pricePreview}>
+                      <span>Продолжительность: {totalDays} дн.</span>
+                      <span>Итого: {formatCurrency(totalPrice)}</span>
+                    </div>
+                  )}
 
                   <Button
                     variant="primary"
@@ -304,10 +431,10 @@ const ItemDetail = () => {
                     onClick={handleRentalRequest}
                     disabled={!rentalDates.startDate || !rentalDates.endDate}
                   >
-                    Арендовать
+                    Запросить аренду
                   </Button>
 
-                  {/* НОВАЯ КНОПКА: Создать контракт */}
+                  {/* Кнопка создания контракта */}
                   <Button
                     variant="outline"
                     size="large"
@@ -331,7 +458,6 @@ const ItemDetail = () => {
                     Редактировать
                   </Button>
                   
-                  {/* НОВАЯ КНОПКА ДЛЯ ВЛАДЕЛЬЦА: Создать предложение аренды */}
                   <Button
                     variant="primary"
                     fullWidth
@@ -371,11 +497,11 @@ const ItemDetail = () => {
               <div className={styles.details}>
                 <div className={styles.detail}>
                   <Calendar size={16} />
-                  <span>Доступен с {formatDate(item.availableFrom)}</span>
+                  <span>Доступен с {formatDate(item.available_from)}</span>
                 </div>
                 <div className={styles.detail}>
                   <Clock size={16} />
-                  <span>Минимальный срок: {item.minRentalDays || 1} день</span>
+                  <span>Минимальный срок: {item.min_rental_days || 1} день</span>
                 </div>
                 <div className={styles.detail}>
                   <DollarSign size={16} />
@@ -383,8 +509,23 @@ const ItemDetail = () => {
                 </div>
                 <div className={styles.detail}>
                   <Shield size={16} />
-                  <span>Страховка включена</span>
+                  <span>Состояние: {item.condition}</span>
                 </div>
+                {item.brand && (
+                  <div className={styles.detail}>
+                    <span>Бренд: {item.brand}</span>
+                  </div>
+                )}
+                {item.model && (
+                  <div className={styles.detail}>
+                    <span>Модель: {item.model}</span>
+                  </div>
+                )}
+                {item.year && (
+                  <div className={styles.detail}>
+                    <span>Год: {item.year}</span>
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -394,16 +535,21 @@ const ItemDetail = () => {
               <div className={styles.ownerInfo}>
                 <div className={styles.ownerAvatar}>
                   {item.owner?.avatar ? (
-                    <img src={item.owner.avatar} alt={item.owner.name} />
+                    <img 
+                      src={`http://localhost:8000${item.owner.avatar}`} 
+                      alt={`${item.owner.first_name} ${item.owner.last_name}`} 
+                    />
                   ) : (
                     <User size={24} />
                   )}
                 </div>
                 <div className={styles.ownerDetails}>
-                  <div className={styles.ownerName}>{item.owner?.name}</div>
+                  <div className={styles.ownerName}>
+                    {item.owner?.first_name} {item.owner?.last_name}
+                  </div>
                   <div className={styles.ownerStats}>
                     <span>⭐ {item.owner?.rating || 'Нет рейтинга'}</span>
-                    <span>📦 {item.owner?.itemsCount || 0} товаров</span>
+                    <span>✅ {item.owner?.is_verified ? 'Верифицирован' : 'Не верифицирован'}</span>
                   </div>
                 </div>
                 <Button
@@ -422,18 +568,17 @@ const ItemDetail = () => {
         <Modal
           isOpen={isRentalModalOpen}
           onClose={() => setIsRentalModalOpen(false)}
-          title="Подтверждение аренды"
+          title="Подтверждение запроса на аренду"
         >
           <div className={styles.rentalModal}>
             <div className={styles.rentalSummary}>
               <h4>{item.title}</h4>
               <div className={styles.summaryDetails}>
                 <div>Период: {rentalDates.startDate} - {rentalDates.endDate}</div>
-                <div>Цена за день: {formatCurrency(item.pricePerDay)}</div>
+                <div>Количество дней: {totalDays}</div>
+                <div>Цена за день: {formatCurrency(item.price_per_day)}</div>
                 <div className={styles.totalPrice}>
-                  Итого: {formatCurrency(
-                    Math.ceil((new Date(rentalDates.endDate) - new Date(rentalDates.startDate)) / (1000 * 60 * 60 * 24)) * item.pricePerDay
-                  )}
+                  Итого: {formatCurrency(totalPrice)}
                 </div>
               </div>
             </div>
@@ -449,7 +594,7 @@ const ItemDetail = () => {
                 variant="primary"
                 onClick={handleRentalSubmit}
               >
-                Подтвердить
+                Отправить запрос
               </Button>
             </div>
           </div>
