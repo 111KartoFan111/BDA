@@ -136,9 +136,9 @@ export const itemsAPI = {
   createRentalRequest: (id, requestData) => {
     console.log('Creating rental request with data:', requestData)
     
-    // Убеждаемся что отправляем данные в правильном формате
-    // НЕ включаем item_id, так как он уже в URL
+    // ИСПРАВЛЯЕМ: включаем item_id в тело запроса, как ожидает бэкенд
     const backendData = {
+      item_id: id, // ДОБАВЛЯЕМ item_id в тело запроса
       start_date: requestData.start_date,
       end_date: requestData.end_date,
       total_price: requestData.total_price,
