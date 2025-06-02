@@ -64,7 +64,7 @@ export const useApi = (apiFunction, dependencies = [], options = {}) => {
   }
 }
 
-// Хук для пагинированных данных
+// ИСПРАВЛЕННЫЙ хук для пагинированных данных
 export const usePaginatedApi = (apiFunction, options = {}) => {
   const [items, setItems] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
@@ -75,22 +75,49 @@ export const usePaginatedApi = (apiFunction, options = {}) => {
   
   const { 
     itemsPerPage = 10,
-    resetOnRefresh = false 
+    resetOnRefresh = false,
+    params = {} // ИСПРАВЛЕНИЕ: Добавляем дефолтное значение
   } = options
+
+  // ИСПРАВЛЕНИЕ: Функция для очистки пустых параметров
+  const cleanParams = useCallback((params) => {
+    const cleaned = {}
+    for (const [key, value] of Object.entries(params)) {
+      // Добавляем только непустые значения
+      if (value !== null && value !== undefined && value !== '') {
+        cleaned[key] = value
+      }
+    }
+    return cleaned
+  }, [])
 
   const fetchPage = useCallback(async (page = 1, append = false) => {
     try {
       setLoading(true)
       setError(null)
       
-      const params = {
+      // ИСПРАВЛЕНИЕ: Очищаем параметры перед отправкой
+      const cleanedParams = cleanParams({
         page,
         limit: itemsPerPage,
-        ...options.params
+        ...params
+      })
+      
+      console.log('Sending cleaned params:', cleanedParams) // Для отладки
+      
+      const response = await apiFunction(cleanedParams)
+      
+      // ИСПРАВЛЕНИЕ: Более гибкая обработка ответа
+      let responseData = response.data
+      
+      // Если данные обернуты в data
+      if (responseData.data) {
+        responseData = responseData.data
       }
       
-      const response = await apiFunction(params)
-      const { items: newItems, totalPages: total, totalItems: count } = response.data
+      const newItems = responseData.data || responseData.items || responseData || []
+      const total = responseData.totalPages || responseData.total_pages || 1
+      const count = responseData.totalItems || responseData.total_items || responseData.total || newItems.length
       
       if (append && page > 1) {
         setItems(prev => [...prev, ...newItems])
@@ -99,18 +126,19 @@ export const usePaginatedApi = (apiFunction, options = {}) => {
       }
       
       setCurrentPage(page)
-      setTotalPages(total || 1)
-      setTotalItems(count || newItems.length)
+      setTotalPages(total)
+      setTotalItems(count)
       
       return { success: true, data: newItems }
     } catch (err) {
+      console.error('Paginated API error:', err)
       const errorMessage = err.response?.data?.message || err.message || 'Произошла ошибка'
       setError(errorMessage)
       return { success: false, error: errorMessage }
     } finally {
       setLoading(false)
     }
-  }, [apiFunction, itemsPerPage, options.params])
+  }, [apiFunction, itemsPerPage, params, cleanParams])
 
   const loadMore = useCallback(() => {
     if (currentPage < totalPages && !loading) {

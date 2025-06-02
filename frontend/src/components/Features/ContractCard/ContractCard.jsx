@@ -16,31 +16,56 @@ import Button from '../../UI/Button/Button'
 import styles from './ContractCard.module.css'
 
 const ContractCard = ({ contract, variant = 'default', onAction }) => {
+  // ИСПРАВЛЕНИЕ: Адаптируем поля под формат бэкенда
   const {
     id,
-    item,
-    tenant,
-    owner,
-    startDate,
-    endDate,
-    totalPrice,
+    item, // может отсутствовать - нужно обработать
+    tenant_id,
+    owner_id,
+    start_date,
+    end_date,
+    total_price,
+    deposit,
     status,
-    createdAt,
-    contractAddress,
-    isOwner
+    created_at,
+    contract_address,
+    // Определяем роль пользователя (в реальном приложении получаем из контекста)
   } = contract
+
+  // Временные заглушки для недостающих данных
+  const tenant = { 
+    id: tenant_id,
+    name: 'Арендатор', // В реальном приложении должны быть данные пользователя
+    email: 'tenant@example.com'
+  }
+  
+  const owner = { 
+    id: owner_id,
+    name: 'Владелец',
+    email: 'owner@example.com'
+  }
+
+  const itemData = item || {
+    id: contract.item_id,
+    title: 'Товар',
+    images: [],
+    pricePerDay: '0'
+  }
+
+  // Определяем является ли текущий пользователь владельцем (заглушка)
+  const isOwner = true // В реальном приложении: user?.id === owner_id
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case CONTRACT_STATUS.ACTIVE:
+      case 'active':
         return <CheckCircle size={16} className={styles.statusIconActive} />
-      case CONTRACT_STATUS.COMPLETED:
+      case 'completed':
         return <CheckCircle size={16} className={styles.statusIconCompleted} />
-      case CONTRACT_STATUS.CANCELLED:
+      case 'cancelled':
         return <XCircle size={16} className={styles.statusIconCancelled} />
-      case CONTRACT_STATUS.DISPUTED:
+      case 'disputed':
         return <AlertCircle size={16} className={styles.statusIconDisputed} />
-      case CONTRACT_STATUS.PENDING:
+      case 'pending':
         return <Clock size={16} className={styles.statusIconPending} />
       default:
         return <Clock size={16} className={styles.statusIconDefault} />
@@ -49,36 +74,36 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
 
   const getStatusText = (status) => {
     const statusMap = {
-      [CONTRACT_STATUS.DRAFT]: 'Черновик',
-      [CONTRACT_STATUS.PENDING]: 'Ожидает подписания',
-      [CONTRACT_STATUS.SIGNED]: 'Подписан',
-      [CONTRACT_STATUS.ACTIVE]: 'Активный',
-      [CONTRACT_STATUS.COMPLETED]: 'Завершен',
-      [CONTRACT_STATUS.CANCELLED]: 'Отменен',
-      [CONTRACT_STATUS.DISPUTED]: 'Спор',
-      [CONTRACT_STATUS.EXPIRED]: 'Истек'
+      'draft': 'Черновик',
+      'pending': 'Ожидает подписания',
+      'signed': 'Подписан',
+      'active': 'Активный',
+      'completed': 'Завершен',
+      'cancelled': 'Отменен',
+      'disputed': 'Спор',
+      'expired': 'Истек'
     }
     return statusMap[status] || status
   }
 
   const getStatusClass = (status) => {
     switch (status) {
-      case CONTRACT_STATUS.ACTIVE:
+      case 'active':
         return styles.statusActive
-      case CONTRACT_STATUS.COMPLETED:
+      case 'completed':
         return styles.statusCompleted
-      case CONTRACT_STATUS.CANCELLED:
+      case 'cancelled':
         return styles.statusCancelled
-      case CONTRACT_STATUS.DISPUTED:
+      case 'disputed':
         return styles.statusDisputed
-      case CONTRACT_STATUS.PENDING:
+      case 'pending':
         return styles.statusPending
       default:
         return styles.statusDefault
     }
   }
 
-  const canPerformActions = status === CONTRACT_STATUS.PENDING || status === CONTRACT_STATUS.ACTIVE
+  const canPerformActions = status === 'pending' || status === 'active'
 
   const cardClasses = [
     styles.contractCard,
@@ -92,7 +117,7 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
       <div className={styles.cardHeader}>
         <div className={styles.contractInfo}>
           <h3 className={styles.contractTitle}>
-            {item?.title || 'Товар удален'}
+            {itemData?.title || 'Товар удален'}
           </h3>
           <div className={styles.contractId}>
             Контракт #{id.slice(0, 8)}...
@@ -124,9 +149,9 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
               Период аренды
             </span>
             <span className={styles.detailValue}>
-              {formatDate(startDate)} - {formatDate(endDate)}
+              {formatDate(start_date)} - {formatDate(end_date)}
               <span className={styles.duration}>
-                ({formatRentalDuration(startDate, endDate)})
+                ({formatRentalDuration(start_date, end_date)})
               </span>
             </span>
           </div>
@@ -137,7 +162,7 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
               Стоимость
             </span>
             <span className={styles.detailValue}>
-              {formatCurrency(totalPrice)}
+              {formatCurrency(total_price)}
             </span>
           </div>
 
@@ -147,34 +172,34 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
               Создан
             </span>
             <span className={styles.detailValue}>
-              {formatDate(createdAt)}
+              {formatDate(created_at)}
             </span>
           </div>
 
-          {contractAddress && (
+          {contract_address && (
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>
                 <ExternalLink size={16} />
                 Блокчейн
               </span>
               <a
-                href={`https://sepolia.etherscan.io/address/${contractAddress}`}
+                href={`https://sepolia.etherscan.io/address/${contract_address}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.blockchainLink}
               >
-                {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
+                {contract_address.slice(0, 6)}...{contract_address.slice(-4)}
               </a>
             </div>
           )}
         </div>
 
         {/* Превью товара */}
-        {item && (
+        {itemData && (
           <div className={styles.itemPreview}>
             <div className={styles.itemImage}>
-              {item.images?.[0] ? (
-                <img src={item.images[0]} alt={item.title} />
+              {itemData.images?.[0] ? (
+                <img src={itemData.images[0]} alt={itemData.title} />
               ) : (
                 <div className={styles.imagePlaceholder}>
                   <User size={24} />
@@ -182,9 +207,9 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
               )}
             </div>
             <div className={styles.itemInfo}>
-              <div className={styles.itemTitle}>{item.title}</div>
+              <div className={styles.itemTitle}>{itemData.title}</div>
               <div className={styles.itemPrice}>
-                {formatCurrency(item.pricePerDay)}/день
+                {formatCurrency(itemData.pricePerDay)}/день
               </div>
             </div>
           </div>
@@ -193,15 +218,9 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
 
       {/* Действия */}
       <div className={styles.cardActions}>
-        <Link to={`/contracts/${id}`} className={styles.viewButton}>
-          <Button variant="outline" size="small" fullWidth>
-            Подробнее
-          </Button>
-        </Link>
-
         {canPerformActions && onAction && (
           <div className={styles.actionButtons}>
-            {status === CONTRACT_STATUS.PENDING && isOwner && (
+            {status === 'pending' && isOwner && (
               <>
                 <Button
                   variant="success"
@@ -220,7 +239,7 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
               </>
             )}
 
-            {status === CONTRACT_STATUS.ACTIVE && (
+            {status === 'active' && (
               <>
                 <Button
                   variant="primary"

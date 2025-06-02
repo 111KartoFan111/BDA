@@ -1,4 +1,4 @@
-// frontend/src/pages/Contracts/ContractsList.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ
+// frontend/src/pages/Contracts/ContractsList.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FileText, Filter, Search, Plus, Calendar } from 'lucide-react'
@@ -27,6 +27,33 @@ const ContractsList = () => {
   const [sortBy, setSortBy] = useState('created_at')
   const [showFilters, setShowFilters] = useState(false)
 
+  // ИСПРАВЛЕНИЕ: Функция для очистки пустых параметров
+  const getCleanParams = (filters, sortBy) => {
+    const params = {}
+    
+    // Добавляем только непустые параметры
+    if (filters.status && filters.status.trim()) {
+      params.status = filters.status.trim()
+    }
+    if (filters.search && filters.search.trim()) {
+      params.search = filters.search.trim()
+    }
+    if (filters.dateFrom && filters.dateFrom.trim()) {
+      params.dateFrom = filters.dateFrom.trim()
+    }
+    if (filters.dateTo && filters.dateTo.trim()) {
+      params.dateTo = filters.dateTo.trim()
+    }
+    if (filters.type && filters.type.trim()) {
+      params.type = filters.type.trim()
+    }
+    if (sortBy && sortBy.trim()) {
+      params.sort = sortBy.trim()
+    }
+    
+    return params
+  }
+
   const {
     items: contracts,
     loading,
@@ -37,10 +64,7 @@ const ContractsList = () => {
     refresh
   } = usePaginatedApi(contractsAPI.getUserContracts, {
     itemsPerPage: 12,
-    params: {
-      ...filters,
-      sort: sortBy
-    }
+    params: getCleanParams(filters, sortBy) // ИСПРАВЛЕНИЕ: Используем очищенные параметры
   })
 
   useEffect(() => {
@@ -48,6 +72,13 @@ const ContractsList = () => {
       fetchPage(1)
     }
   }, [isAuthenticated, filters, sortBy])
+
+  // ОТЛАДКА: Логируем полученные контракты
+  useEffect(() => {
+    console.log('Contracts received:', contracts)
+    console.log('Loading:', loading)
+    console.log('Error:', error)
+  }, [contracts, loading, error])
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
@@ -151,7 +182,6 @@ const ContractsList = () => {
               </p>
             </div>
             
-            {/* НОВАЯ КНОПКА: Создать контракт */}
             <div className={styles.headerActions}>
               <Link to="/contracts/create">
                 <Button
