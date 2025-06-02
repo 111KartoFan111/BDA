@@ -1,3 +1,5 @@
+// frontend/src/services/utils/constants.js - ИСПРАВЛЕННАЯ ВЕРСИЯ
+
 // API константы
 export const API_ENDPOINTS = {
   AUTH: '/auth',
@@ -34,16 +36,28 @@ export const ITEM_STATUS = {
   ARCHIVED: 'archived'
 }
 
-// Статусы контрактов
+// ИСПРАВЛЕНИЕ: Статусы контрактов - должны совпадать с бэкендом
 export const CONTRACT_STATUS = {
   DRAFT: 'draft',
-  PENDING: 'pending',
-  SIGNED: 'signed',
-  ACTIVE: 'active',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
-  DISPUTED: 'disputed',
-  EXPIRED: 'expired'
+  PENDING: 'pending',      // Ожидает подписания
+  SIGNED: 'signed',        // Подписан обеими сторонами
+  ACTIVE: 'active',        // Активный (может быть развернут в блокчейне)
+  COMPLETED: 'completed',  // Завершен
+  CANCELLED: 'cancelled',  // Отменен
+  DISPUTED: 'disputed',    // Спор
+  EXPIRED: 'expired'       // Истек
+}
+
+// Читаемые названия статусов контрактов
+export const CONTRACT_STATUS_LABELS = {
+  [CONTRACT_STATUS.DRAFT]: 'Черновик',
+  [CONTRACT_STATUS.PENDING]: 'Ожидает подписания',
+  [CONTRACT_STATUS.SIGNED]: 'Подписан',
+  [CONTRACT_STATUS.ACTIVE]: 'Активный',
+  [CONTRACT_STATUS.COMPLETED]: 'Завершен',
+  [CONTRACT_STATUS.CANCELLED]: 'Отменен',
+  [CONTRACT_STATUS.DISPUTED]: 'Спор',
+  [CONTRACT_STATUS.EXPIRED]: 'Истек'
 }
 
 // Типы платежей
@@ -266,16 +280,29 @@ export const SUCCESS_MESSAGES = {
   FILE_UPLOADED: 'Файл успешно загружен'
 }
 
-// Цвета для статусов
+// ИСПРАВЛЕНИЕ: Цвета для статусов - обновлены под новые статусы
 export const STATUS_COLORS = {
-  [CONTRACT_STATUS.ACTIVE]: '#10b981', // green
+  [CONTRACT_STATUS.DRAFT]: '#6b7280', // gray
   [CONTRACT_STATUS.PENDING]: '#f59e0b', // yellow
-  [CONTRACT_STATUS.COMPLETED]: '#3b82f6', // blue
+  [CONTRACT_STATUS.SIGNED]: '#3b82f6', // blue
+  [CONTRACT_STATUS.ACTIVE]: '#10b981', // green
+  [CONTRACT_STATUS.COMPLETED]: '#8b5cf6', // purple
   [CONTRACT_STATUS.CANCELLED]: '#ef4444', // red
-  [CONTRACT_STATUS.DISPUTED]: '#8b5cf6', // purple
+  [CONTRACT_STATUS.DISPUTED]: '#f97316', // orange
+  [CONTRACT_STATUS.EXPIRED]: '#6b7280', // gray
   [PAYMENT_STATUS.COMPLETED]: '#10b981',
   [PAYMENT_STATUS.PENDING]: '#f59e0b',
   [PAYMENT_STATUS.FAILED]: '#ef4444'
+}
+
+// Функция для получения цвета статуса
+export const getStatusColor = (status) => {
+  return STATUS_COLORS[status] || '#6b7280'
+}
+
+// Функция для получения читаемого названия статуса
+export const getStatusLabel = (status) => {
+  return CONTRACT_STATUS_LABELS[status] || status
 }
 
 export default {
@@ -284,6 +311,7 @@ export default {
   USER_ROLES,
   ITEM_STATUS,
   CONTRACT_STATUS,
+  CONTRACT_STATUS_LABELS,
   PAYMENT_TYPE,
   PAYMENT_STATUS,
   ITEM_CATEGORIES,
@@ -306,5 +334,7 @@ export default {
   DOCS_URLS,
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
-  STATUS_COLORS
+  STATUS_COLORS,
+  getStatusColor,
+  getStatusLabel
 }

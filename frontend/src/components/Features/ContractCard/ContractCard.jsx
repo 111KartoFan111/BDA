@@ -12,16 +12,21 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatDate, formatRentalDuration } from '../../../services/utils/formatting'
 import { CONTRACT_STATUS } from '../../../services/utils/constants'
+import { useAuth } from '../../../context/AuthContext' // ИСПРАВЛЕНИЕ: Добавлен импорт
 import Button from '../../UI/Button/Button'
 import styles from './ContractCard.module.css'
 
 const ContractCard = ({ contract, variant = 'default', onAction }) => {
+  const { user } = useAuth() // ИСПРАВЛЕНИЕ: Используем хук авторизации
+  
   // ИСПРАВЛЕНИЕ: Адаптируем поля под формат бэкенда
   const {
     id,
-    item, // может отсутствовать - нужно обработать
+    item,
     tenant_id,
     owner_id,
+    tenant,
+    owner,
     start_date,
     end_date,
     total_price,
@@ -29,19 +34,22 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
     status,
     created_at,
     contract_address,
-    // Определяем роль пользователя (в реальном приложении получаем из контекста)
+    tenant_signature,
+    owner_signature,
   } = contract
 
-  // Временные заглушки для недостающих данных
-  const tenant = { 
+  // Используем данные из контракта или создаем заглушки
+  const tenantData = tenant || { 
     id: tenant_id,
-    name: 'Арендатор', // В реальном приложении должны быть данные пользователя
+    first_name: 'Арендатор',
+    last_name: '',
     email: 'tenant@example.com'
   }
   
-  const owner = { 
+  const ownerData = owner || { 
     id: owner_id,
-    name: 'Владелец',
+    first_name: 'Владелец',
+    last_name: '',
     email: 'owner@example.com'
   }
 
@@ -49,11 +57,12 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
     id: contract.item_id,
     title: 'Товар',
     images: [],
-    pricePerDay: '0'
+    price_per_day: '0'
   }
 
-  // Определяем является ли текущий пользователь владельцем (заглушка)
-  const isOwner = true // В реальном приложении: user?.id === owner_id
+  // ИСПРАВЛЕНИЕ: Правильно определяем роль пользователя
+  const isOwner = user?.id === owner_id
+  const isTenant = user?.id === tenant_id
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -103,7 +112,15 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
     }
   }
 
-  const canPerformActions = status === 'pending' || status === 'active'
+  // ИСПРАВЛЕНИЕ: Правильная логика для отображения кнопок
+  const canSign = status === 'pending' && (
+    (isOwner && !owner_signature) || (isTenant && !tenant_signature)
+  )
+  
+  const canComplete = status === 'active' && (isOwner || isTenant)
+  const canCancel = ['pending', 'signed'].includes(status) && (isOwner || isTenant)
+  
+  const canPerformActions = canSign || canComplete || canCancel
 
   const cardClasses = [
     styles.contractCard,
@@ -139,7 +156,10 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
               {isOwner ? 'Арендатор' : 'Владелец'}
             </span>
             <span className={styles.detailValue}>
-              {isOwner ? tenant?.name : owner?.name}
+              {isOwner 
+                ? `${tenantData?.first_name} ${tenantData?.last_name}`.trim() 
+                : `${ownerData?.first_name} ${ownerData?.last_name}`.trim()
+              }
             </span>
           </div>
 
@@ -209,7 +229,7 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
             <div className={styles.itemInfo}>
               <div className={styles.itemTitle}>{itemData.title}</div>
               <div className={styles.itemPrice}>
-                {formatCurrency(itemData.pricePerDay)}/день
+                {formatCurrency(itemData.price_per_day)}/день
               </div>
             </div>
           </div>
@@ -220,26 +240,26 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
       <div className={styles.cardActions}>
         {canPerformActions && onAction && (
           <div className={styles.actionButtons}>
-            {status === 'pending' && isOwner && (
+            {canSign && (
               <>
                 <Button
                   variant="success"
                   size="small"
-                  onClick={() => onAction('approve', contract)}
+                  onClick={() => onAction('sign', contract)}
                 >
-                  Одобрить
+                  Подписать контракт
                 </Button>
                 <Button
                   variant="danger"
                   size="small"
-                  onClick={() => onAction('reject', contract)}
+                  onClick={() => onAction('cancel', contract)}
                 >
                   Отклонить
                 </Button>
               </>
             )}
 
-            {status === 'active' && (
+            {canComplete && (
               <>
                 <Button
                   variant="primary"

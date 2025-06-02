@@ -11,11 +11,11 @@ import Card from '../../components/UI/Card/Card'
 import Loader from '../../components/UI/Loader/Loader'
 import ContractCard from '../../components/Features/ContractCard/ContractCard'
 import { CONTRACT_STATUS } from '../../services/utils/constants'
-import toast from 'react-hot-toast' // ИСПРАВЛЕНИЕ: Добавлен импорт toast
+import toast from 'react-hot-toast'
 import styles from './Contracts.module.css'
 
 const ContractsList = () => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth() // ИСПРАВЛЕНИЕ: Добавлен user для отладки
   
   const [filters, setFilters] = useState({
     status: '',
@@ -74,6 +74,15 @@ const ContractsList = () => {
     }
   }, [isAuthenticated, filters, sortBy])
 
+  // ИСПРАВЛЕНИЕ: Добавлена отладочная информация
+  useEffect(() => {
+    console.log('Current user:', user)
+    console.log('Contracts loaded:', contracts)
+    if (contracts.length > 0) {
+      console.log('Sample contract:', contracts[0])
+    }
+  }, [contracts, user])
+
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
       ...prev,
@@ -100,33 +109,40 @@ const ContractsList = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // ИСПРАВЛЕНИЕ: Обновленная функция обработки действий с контрактом
+  // ИСПРАВЛЕНИЕ: Полностью переписанная функция обработки действий
   const handleContractAction = async (action, contract) => {
     try {
       console.log('Contract action:', action, 'for contract:', contract.id)
+      console.log('Contract data:', contract)
+      console.log('User role - isOwner:', user?.id === contract.owner_id, 'isTenant:', user?.id === contract.tenant_id)
       
       switch (action) {
         case 'approve':
         case 'sign':
-          // ИСПРАВЛЕНИЕ: Используем POST с пустым телом для подписания
-          await contractsAPI.signContract(contract.id)
+          // ИСПРАВЛЕНИЕ: Правильное формирование подписи
+          const signatureData = {
+            signature: `digital_signature_${user?.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          }
+          console.log('Signing with data:', signatureData)
+          
+          await contractsAPI.signContract(contract.id, signatureData)
           toast.success('Контракт успешно подписан!')
           break
           
         case 'reject':
         case 'cancel':
-          // ИСПРАВЛЕНИЕ: Используем POST для отмены с причиной
+          console.log('Cancelling contract:', contract.id)
           await contractsAPI.cancelContract(contract.id, 'Отклонено пользователем')
           toast.success('Контракт отменен')
           break
           
         case 'complete':
+          console.log('Completing contract:', contract.id)
           await contractsAPI.completeContract(contract.id)
           toast.success('Контракт завершен')
           break
           
         case 'extend':
-          // TODO: Implement contract extension
           toast.info('Функция продления будет доступна позже')
           break
           
@@ -136,33 +152,38 @@ const ContractsList = () => {
       }
       
       // Обновляем список после действия
+      console.log('Refreshing contracts list...')
       refresh()
+      
     } catch (error) {
       console.error('Contract action error:', error)
+      console.error('Error response:', error.response)
       
       // Детальная обработка ошибок
       let errorMessage = 'Ошибка при выполнении действия'
       
       if (error.response?.status === 422) {
         // Ошибки валидации
-        if (error.response.data?.details) {
-          const details = error.response.data.details
-          if (Array.isArray(details)) {
-            const errorMessages = details.map(err => err.msg || err.message).join(', ')
+        if (error.response.data?.detail) {
+          if (Array.isArray(error.response.data.detail)) {
+            const errorMessages = error.response.data.detail.map(err => err.msg || err.message || err).join(', ')
             errorMessage = `Ошибки валидации: ${errorMessages}`
           } else {
-            errorMessage = error.response.data.message || 'Ошибка валидации данных'
+            errorMessage = error.response.data.detail
           }
+        } else if (error.response.data?.message) {
+          errorMessage = error.response.data.message
         } else {
-          errorMessage = error.response.data?.message || 'Некорректные данные запроса'
+          errorMessage = 'Ошибка валидации данных'
         }
       } else if (error.response?.status === 405) {
-        // Неправильный HTTP метод
         errorMessage = 'Операция недоступна для данного контракта'
       } else if (error.response?.status === 404) {
         errorMessage = 'Контракт не найден'
       } else if (error.response?.status === 403) {
         errorMessage = 'У вас нет прав для выполнения этого действия'
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || error.response.data?.detail || 'Некорректный запрос'
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message
       } else if (error.response?.data?.detail) {

@@ -12,7 +12,7 @@ export const contractsAPI = {
     return apiRequest.get(`/v1/contracts/${id}`)
   },
 
-  // ИСПРАВЛЕННЫЙ МЕТОД: Создание нового контракта
+  // Создание нового контракта
   createContract: (contractData) => {
     // Функция для преобразования datetime-local в ISO формат
     const formatDateTimeForAPI = (dateTimeLocal) => {
@@ -42,7 +42,6 @@ export const contractsAPI = {
       deposit: parseFloat(contractData.deposit || 0),
       terms: contractData.terms || contractData.message || '',
       special_conditions: contractData.special_conditions || contractData.special_terms || contractData.specialTerms || '',
-      // Убираем tenant_email - будем искать пользователя по email на бэкенде
       tenant_email: contractData.tenant_email || contractData.tenantEmail
     }
 
@@ -51,22 +50,15 @@ export const contractsAPI = {
     return apiRequest.post('/v1/contracts', backendData)
   },
 
-  // Создание предложения аренды (альтернативное название)
-  createRentalProposal: (proposalData) => {
-    return apiRequest.post('/v1/contracts/proposals', {
-      item_id: proposalData.itemId,
-      tenant_email: proposalData.tenantEmail,
-      start_date: proposalData.startDate,
-      end_date: proposalData.endDate,
-      total_price: proposalData.totalPrice,
-      terms: proposalData.message,
-      special_conditions: proposalData.terms,
-    })
-  },
-
-  // ИСПРАВЛЕННЫЙ МЕТОД: Подписание контракта арендатором
-  signContract: (id, signature = null) => {
-    return apiRequest.post(`/v1/contracts/${id}/sign`, signature ? { signature } : {})
+  // ИСПРАВЛЕННЫЙ МЕТОД: Подписание контракта
+  signContract: (id, signatureData = {}) => {
+    // ИСПРАВЛЕНИЕ: Правильное формирование тела запроса
+    const requestBody = signatureData.signature 
+      ? { signature: signatureData.signature }
+      : { signature: `digital_signature_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` }
+    
+    console.log('Signing contract with data:', requestBody)
+    return apiRequest.post(`/v1/contracts/${id}/sign`, requestBody)
   },
 
   // Принятие предложения аренды
@@ -95,7 +87,7 @@ export const contractsAPI = {
 
   // Завершение контракта
   completeContract: (id) => {
-    return apiRequest.patch(`/v1/contracts/${id}/complete`)
+    return apiRequest.post(`/v1/contracts/${id}/complete`)
   },
 
   // Отмена контракта
@@ -281,71 +273,24 @@ export const contractsAPI = {
     return apiRequest.get(`/v1/contracts/${id}/ratings`)
   },
 
-  // Создание автоматического продления
-  setAutoRenewal: (id, renewalSettings) => {
-    return apiRequest.patch(`/v1/contracts/${id}/auto-renewal`, {
-      enabled: renewalSettings.enabled,
-      period: renewalSettings.period,
-      maxRenewals: renewalSettings.maxRenewals,
-      priceAdjustment: renewalSettings.priceAdjustment || 0,
-    })
+  // Синхронизация с блокчейном
+  syncWithBlockchain: (id) => {
+    return apiRequest.post(`/v1/contracts/${id}/sync-blockchain`)
   },
 
-  // Получение настроек автопродления
-  getAutoRenewalSettings: (id) => {
-    return apiRequest.get(`/v1/contracts/${id}/auto-renewal`)
+  // Деплой в блокчейн
+  deployToBlockchain: (id) => {
+    return apiRequest.post(`/v1/contracts/${id}/deploy-to-blockchain`)
   },
 
-  // Отключение автопродления
-  disableAutoRenewal: (id) => {
-    return apiRequest.delete(`/v1/contracts/${id}/auto-renewal`)
+  // Оплата депозита
+  payDeposit: (id) => {
+    return apiRequest.post(`/v1/contracts/${id}/pay-deposit`)
   },
 
-  // МЕТОДЫ ДЛЯ РАБОТЫ С ПРЕДЛОЖЕНИЯМИ
-
-  // Получение доступных товаров для создания предложения
-  getAvailableItems: (params = {}) => {
-    return apiRequest.get('/v1/contracts/available-items', { params })
-  },
-
-  // Проверка доступности товара на указанные даты
-  checkItemAvailability: (itemId, startDate, endDate) => {
-    return apiRequest.post(`/v1/contracts/check-availability`, {
-      item_id: itemId,
-      start_date: startDate,
-      end_date: endDate
-    })
-  },
-
-  // Расчет стоимости аренды
-  calculateRentalCost: (itemId, startDate, endDate) => {
-    return apiRequest.post(`/v1/contracts/calculate-cost`, {
-      item_id: itemId,
-      start_date: startDate,
-      end_date: endDate
-    })
-  },
-
-  // Получение предложенных условий
-  getProposalTerms: (itemId) => {
-    return apiRequest.get(`/v1/contracts/proposal-terms/${itemId}`)
-  },
-
-  // МЕТОДЫ ДЛЯ УВЕДОМЛЕНИЙ
-
-  // Отправка уведомления о новом предложении
-  notifyNewProposal: (contractId) => {
-    return apiRequest.post(`/v1/contracts/${contractId}/notify/proposal`)
-  },
-
-  // Отправка уведомления о принятии предложения
-  notifyProposalAccepted: (contractId) => {
-    return apiRequest.post(`/v1/contracts/${contractId}/notify/accepted`)
-  },
-
-  // Отправка уведомления об отклонении предложения
-  notifyProposalRejected: (contractId) => {
-    return apiRequest.post(`/v1/contracts/${contractId}/notify/rejected`)
+  // Получение статуса в блокчейне
+  getBlockchainStatus: (id) => {
+    return apiRequest.get(`/v1/contracts/${id}/blockchain-status`)
   }
 }
 
