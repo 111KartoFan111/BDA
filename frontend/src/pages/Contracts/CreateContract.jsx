@@ -1,19 +1,20 @@
-// frontend/src/pages/Contracts/CreateContract.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// frontend/src/pages/Contracts/CreateContract.jsx - УЛУЧШЕННАЯ ВЕРСИЯ
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, CheckCircle, FileText } from 'lucide-react'
+import { ArrowLeft, CheckCircle, FileText, AlertCircle } from 'lucide-react'
 import { contractsAPI } from '../../services/api/contracts'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/UI/Button/Button'
 import ContractForm from '../../components/Forms/ContractForm/ContractForm'
 import Modal from '../../components/UI/Modal/Modal'
+import Card from '../../components/UI/Card/Card'
 import toast from 'react-hot-toast'
 import styles from './Contracts.module.css'
 
 const CreateContract = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
@@ -48,16 +49,18 @@ const CreateContract = () => {
         return date.toISOString()
       }
       
-      // Преобразуем данные формы в формат API
+      // Преобразуем данные формы в формат API согласно бэкенду
       const contractData = {
         item_id: formData.itemId,
-        tenant_email: formData.tenantEmail,
         start_date: formatDateForAPI(formData.startDate),
         end_date: formatDateForAPI(formData.endDate),
         total_price: parseFloat(formData.totalPrice || 0),
         deposit: parseFloat(formData.deposit || 0),
-        terms: formData.message || '',
-        special_conditions: formData.specialTerms || ''
+        terms: formData.terms || '',
+        special_conditions: formData.specialConditions || '',
+        // Добавляем данные арендатора
+        tenant_id: formData.tenantId || null,
+        tenant_email: formData.tenantEmail
       }
       
       console.log('Sending contract data to API:', contractData)
@@ -125,6 +128,12 @@ const CreateContract = () => {
                 message = 'Неверный формат даты и времени'
               } else if (message.includes('Field required')) {
                 message = 'Обязательное поле'
+              } else if (message.includes('User not found')) {
+                message = 'Пользователь с таким email не найден'
+              } else if (message.includes('Item not found')) {
+                message = 'Товар не найден'
+              } else if (message.includes('Item not available')) {
+                message = 'Товар недоступен на выбранные даты'
               }
               
               return `${fieldName}: ${message}`
@@ -135,9 +144,17 @@ const CreateContract = () => {
           errorMessage = error.response.data.message
         }
       } else if (error.response?.status === 404) {
-        errorMessage = 'Товар или пользователь не найден'
+        if (error.response.data?.message?.includes('User')) {
+          errorMessage = 'Пользователь с указанным email не найден'
+        } else if (error.response.data?.message?.includes('Item')) {
+          errorMessage = 'Товар не найден'
+        } else {
+          errorMessage = 'Ресурс не найден'
+        }
       } else if (error.response?.status === 400) {
         errorMessage = error.response.data?.message || 'Некорректные данные запроса'
+      } else if (error.response?.status === 403) {
+        errorMessage = 'У вас нет прав для создания контракта с этим товаром'
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message
       } else if (error.response?.data?.detail) {
@@ -204,6 +221,44 @@ const CreateContract = () => {
           </p>
         </div>
 
+        {/* Информационная карточка */}
+        <Card className={styles.infoCard}>
+          <div className={styles.infoHeader}>
+            <AlertCircle size={20} />
+            <h3>Как работает создание контракта</h3>
+          </div>
+          <div className={styles.infoContent}>
+            <div className={styles.step}>
+              <span className={styles.stepNumber}>1</span>
+              <div className={styles.stepContent}>
+                <h4>Заполните форму</h4>
+                <p>Выберите товар, укажите арендатора и условия аренды</p>
+              </div>
+            </div>
+            <div className={styles.step}>
+              <span className={styles.stepNumber}>2</span>
+              <div className={styles.stepContent}>
+                <h4>Отправка предложения</h4>
+                <p>Арендатор получит уведомление с предложением аренды</p>
+              </div>
+            </div>
+            <div className={styles.step}>
+              <span className={styles.stepNumber}>3</span>
+              <div className={styles.stepContent}>
+                <h4>Ожидание ответа</h4>
+                <p>Арендатор может принять или отклонить предложение</p>
+              </div>
+            </div>
+            <div className={styles.step}>
+              <span className={styles.stepNumber}>4</span>
+              <div className={styles.stepContent}>
+                <h4>Активация контракта</h4>
+                <p>При принятии создается смарт-контракт в блокчейне</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* Форма создания контракта */}
         <div className={styles.formContainer}>
           <ContractForm
@@ -246,15 +301,19 @@ const CreateContract = () => {
                     <span>Арендатор: {createdContract.tenant_email}</span>
                   </div>
                 )}
+                <div className={styles.infoItem}>
+                  <span>Статус: Ожидает подписания</span>
+                </div>
               </div>
               
               <div className={styles.successTips}>
                 <h4>Что дальше?</h4>
                 <ul>
-                  <li>Арендатор получит уведомление о вашем предложении</li>
+                  <li>Арендатор получит email-уведомление о вашем предложении</li>
                   <li>Вы можете отслеживать статус в разделе "Мои контракты"</li>
                   <li>При принятии предложения будет создан смарт-контракт</li>
                   <li>Все изменения статуса придут вам в уведомлениях</li>
+                  <li>Вы можете изменить или отозвать предложение до его принятия</li>
                 </ul>
               </div>
             </div>
