@@ -64,9 +64,9 @@ export const contractsAPI = {
     })
   },
 
-  // Подписание контракта арендатором
-  signContract: (id, signature) => {
-    return apiRequest.patch(`/v1/contracts/${id}/sign`, { signature })
+  // ИСПРАВЛЕННЫЙ МЕТОД: Подписание контракта арендатором
+  signContract: (id, signature = null) => {
+    return apiRequest.post(`/v1/contracts/${id}/sign`, signature ? { signature } : {})
   },
 
   // Принятие предложения аренды

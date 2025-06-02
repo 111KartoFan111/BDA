@@ -105,30 +105,46 @@ const ContractsList = () => {
     fetchPage(page)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-
   const handleContractAction = async (action, contract) => {
     try {
+      console.log('Contract action:', action, 'for contract:', contract.id)
+      
       switch (action) {
         case 'approve':
+        case 'sign':
           await contractsAPI.signContract(contract.id)
+          toast.success('Контракт успешно подписан!')
           break
         case 'reject':
-          await contractsAPI.cancelContract(contract.id, 'Отклонено владельцем')
+          await contractsAPI.cancelContract(contract.id, 'Отклонено пользователем')
+          toast.success('Контракт отклонен')
           break
         case 'complete':
           await contractsAPI.completeContract(contract.id)
+          toast.success('Контракт завершен')
           break
         case 'cancel':
-          await contractsAPI.cancelContract(contract.id)
+          await contractsAPI.cancelContract(contract.id, 'Отменено пользователем')
+          toast.success('Контракт отменен')
+          break
+        case 'extend':
+          // TODO: Implement contract extension
+          toast.info('Функция продления будет доступна позже')
           break
         default:
-          break
+          toast.error(`Неизвестное действие: ${action}`)
+          return
       }
       
       // Обновляем список после действия
       refresh()
     } catch (error) {
       console.error('Contract action error:', error)
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.detail || 
+                          error.message || 
+                          'Ошибка при выполнении действия'
+      toast.error(errorMessage)
     }
   }
 
