@@ -11,6 +11,7 @@ import Card from '../../components/UI/Card/Card'
 import Loader from '../../components/UI/Loader/Loader'
 import ContractCard from '../../components/Features/ContractCard/ContractCard'
 import { CONTRACT_STATUS } from '../../services/utils/constants'
+import toast from 'react-hot-toast' // ИСПРАВЛЕНИЕ: Добавлен импорт toast
 import styles from './Contracts.module.css'
 
 const ContractsList = () => {
@@ -27,7 +28,7 @@ const ContractsList = () => {
   const [sortBy, setSortBy] = useState('created_at')
   const [showFilters, setShowFilters] = useState(false)
 
-  // ИСПРАВЛЕНИЕ: Функция для очистки пустых параметров
+  // Функция для очистки пустых параметров
   const getCleanParams = (filters, sortBy) => {
     const params = {}
     
@@ -64,7 +65,7 @@ const ContractsList = () => {
     refresh
   } = usePaginatedApi(contractsAPI.getUserContracts, {
     itemsPerPage: 12,
-    params: getCleanParams(filters, sortBy) // ИСПРАВЛЕНИЕ: Используем очищенные параметры
+    params: getCleanParams(filters, sortBy)
   })
 
   useEffect(() => {
@@ -72,13 +73,6 @@ const ContractsList = () => {
       fetchPage(1)
     }
   }, [isAuthenticated, filters, sortBy])
-
-  // ОТЛАДКА: Логируем полученные контракты
-  useEffect(() => {
-    console.log('Contracts received:', contracts)
-    console.log('Loading:', loading)
-    console.log('Error:', error)
-  }, [contracts, loading, error])
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
@@ -105,6 +99,8 @@ const ContractsList = () => {
     fetchPage(page)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  // ИСПРАВЛЕНИЕ: Обновленная функция обработки действий с контрактом
   const handleContractAction = async (action, contract) => {
     try {
       console.log('Contract action:', action, 'for contract:', contract.id)
@@ -112,25 +108,28 @@ const ContractsList = () => {
       switch (action) {
         case 'approve':
         case 'sign':
+          // ИСПРАВЛЕНИЕ: Используем POST с пустым телом для подписания
           await contractsAPI.signContract(contract.id)
           toast.success('Контракт успешно подписан!')
           break
+          
         case 'reject':
+        case 'cancel':
+          // ИСПРАВЛЕНИЕ: Используем POST для отмены с причиной
           await contractsAPI.cancelContract(contract.id, 'Отклонено пользователем')
-          toast.success('Контракт отклонен')
+          toast.success('Контракт отменен')
           break
+          
         case 'complete':
           await contractsAPI.completeContract(contract.id)
           toast.success('Контракт завершен')
           break
-        case 'cancel':
-          await contractsAPI.cancelContract(contract.id, 'Отменено пользователем')
-          toast.success('Контракт отменен')
-          break
+          
         case 'extend':
           // TODO: Implement contract extension
           toast.info('Функция продления будет доступна позже')
           break
+          
         default:
           toast.error(`Неизвестное действие: ${action}`)
           return
@@ -140,10 +139,38 @@ const ContractsList = () => {
       refresh()
     } catch (error) {
       console.error('Contract action error:', error)
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.detail || 
-                          error.message || 
-                          'Ошибка при выполнении действия'
+      
+      // Детальная обработка ошибок
+      let errorMessage = 'Ошибка при выполнении действия'
+      
+      if (error.response?.status === 422) {
+        // Ошибки валидации
+        if (error.response.data?.details) {
+          const details = error.response.data.details
+          if (Array.isArray(details)) {
+            const errorMessages = details.map(err => err.msg || err.message).join(', ')
+            errorMessage = `Ошибки валидации: ${errorMessages}`
+          } else {
+            errorMessage = error.response.data.message || 'Ошибка валидации данных'
+          }
+        } else {
+          errorMessage = error.response.data?.message || 'Некорректные данные запроса'
+        }
+      } else if (error.response?.status === 405) {
+        // Неправильный HTTP метод
+        errorMessage = 'Операция недоступна для данного контракта'
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Контракт не найден'
+      } else if (error.response?.status === 403) {
+        errorMessage = 'У вас нет прав для выполнения этого действия'
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast.error(errorMessage)
     }
   }

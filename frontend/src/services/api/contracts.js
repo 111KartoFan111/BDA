@@ -100,7 +100,7 @@ export const contractsAPI = {
 
   // Отмена контракта
   cancelContract: (id, reason = '') => {
-    return apiRequest.patch(`/v1/contracts/${id}/cancel`, { reason })
+    return apiRequest.post(`/v1/contracts/${id}/cancel`, { reason })
   },
 
   // Продление контракта
