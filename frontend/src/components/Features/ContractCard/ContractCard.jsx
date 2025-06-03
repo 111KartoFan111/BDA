@@ -129,7 +129,10 @@ const ContractCard = ({ contract, variant = 'default', onAction }) => {
   ].filter(Boolean).join(' ')
 
   return (
-    <div className={cardClasses}>
+    <div 
+      className={cardClasses}
+    >
+
       {/* Заголовок карточки */}
       <div className={styles.cardHeader}>
         <div className={styles.contractInfo}>

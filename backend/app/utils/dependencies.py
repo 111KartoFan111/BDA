@@ -1,9 +1,10 @@
 """
 FastAPI dependencies for authentication and authorization.
+ИСПРАВЛЕНА опциональная авторизация для публичных эндпоинтов.
 """
 
 from typing import Optional
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from jose import JWTError
@@ -14,8 +15,9 @@ from app.core.security import verify_token
 from app.models.user import User, UserRole
 from app.services.auth import AuthService
 
-# Security scheme
-security = HTTPBearer()
+# Security schemes
+security = HTTPBearer()  # Для обязательной авторизации
+optional_security = HTTPBearer(auto_error=False)  # Для опциональной авторизации
 
 
 def get_current_user(
@@ -165,11 +167,13 @@ def get_current_moderator_user(
 
 
 def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """
     Get current user optionally (for public endpoints that can benefit from user context).
+    
+    ИСПРАВЛЕНО: Использует HTTPBearer с auto_error=False для опциональной авторизации
     
     Args:
         credentials: HTTP authorization credentials (optional)
@@ -178,7 +182,8 @@ def get_optional_current_user(
     Returns:
         Current user object or None
     """
-    if not credentials:
+    # Если нет токена - возвращаем None (публичный доступ)
+    if not credentials or not credentials.credentials:
         return None
     
     try:
@@ -190,9 +195,41 @@ def get_optional_current_user(
         auth_service = AuthService(db)
         user = auth_service.get_user_by_id(uuid.UUID(user_id))
         
+        # Возвращаем пользователя только если он активен
         if user and user.is_active:
             return user
-    except (JWTError, ValueError):
+    except (JWTError, ValueError, Exception):
+        # При любой ошибке просто возвращаем None (публичный доступ)
+        pass
+    
+    return None
+
+
+def get_optional_user_from_header(
+    request: Request,
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """
+    Альтернативная версия: получает пользователя из заголовка Authorization.
+    Может быть полезна если HTTPBearer создает проблемы.
+    """
+    authorization = request.headers.get("Authorization")
+    
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    
+    try:
+        token = authorization.split(" ")[1]
+        user_id = verify_token(token)
+        if user_id is None:
+            return None
+        
+        auth_service = AuthService(db)
+        user = auth_service.get_user_by_id(uuid.UUID(user_id))
+        
+        if user and user.is_active:
+            return user
+    except Exception:
         pass
     
     return None

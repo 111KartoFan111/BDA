@@ -451,6 +451,16 @@ class ItemService:
             Item.is_featured == True
         ).limit(limit).all()
     
+    def get_all_items(
+        self, 
+        page: int = 1, 
+        size: int = 20
+    ) -> PaginatedResponse:
+        """
+        Get all items with pagination.
+        """
+        return self.get_items(ItemSearch(), page, size)
+    
     def get_similar_items(self, item_id: uuid.UUID, limit: int = 4) -> List[Item]:
         """
         Get similar items based on category and tags.

@@ -40,10 +40,12 @@ async def get_items(
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(20, ge=1, le=100, description="Page size"),
     item_service: ItemService = Depends(get_item_service),
-    current_user: Optional[User] = Depends(get_optional_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)  # ← ОПЦИОНАЛЬНАЯ авторизация
 ) -> Any:
     """
     Get items with filtering and pagination.
+    
+    ПУБЛИЧНЫЙ ЭНДПОИНТ - работает без авторизации
     """
     search_params = ItemSearch(
         query=query,
@@ -57,8 +59,20 @@ async def get_items(
         size=size
     )
     
+    # current_user передается в сервис, но может быть None
     result = item_service.get_items(search_params, current_user)
     return result
+
+@router.get("/all", response_model=PaginatedResponse[Item])
+async def get_all_items(
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(20, ge=1, le=100, description="Page size"),
+    item_service: ItemService = Depends(get_item_service)
+) -> Any:
+    """
+    Get all items with pagination.
+    """
+    return item_service.get_all_items(page, size)
 
 
 @router.get("/featured", response_model=Response[List[Item]])

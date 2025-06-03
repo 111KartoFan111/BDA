@@ -552,13 +552,6 @@ const ItemDetail = () => {
                     <span>✅ {item.owner?.is_verified ? 'Верифицирован' : 'Не верифицирован'}</span>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="small"
-                  onClick={() => navigate(`/users/${item.owner?.id}`)}
-                >
-                  Профиль
-                </Button>
               </div>
             </Card>
           </div>
