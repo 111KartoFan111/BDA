@@ -25,11 +25,21 @@ const Home = () => {
         
         // Загрузка рекомендуемых товаров
         const itemsResponse = await itemsAPI.getFeaturedItems()
-        setFeaturedItems(itemsResponse.data.items || [])
+        setFeaturedItems(itemsResponse.data.data || []) // Исправлено
         
         // Загрузка статистики
         const statsResponse = await itemsAPI.getStats()
-        setStats(statsResponse.data || {})
+        console.log('Stats response:', statsResponse) // Для отладки
+        
+        if (statsResponse.data && statsResponse.data.data) {
+          const statsData = statsResponse.data.data
+          setStats({
+            totalItems: statsData.total_items || 0,
+            totalUsers: statsData.total_users || 0,
+            totalContracts: statsData.completed_contracts || 0,
+            averageRating: statsData.average_rating || 0
+          })
+        }
       } catch (error) {
         console.error('Error loading home data:', error)
       } finally {
@@ -143,41 +153,43 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Статистика */}
-      <section className={styles.stats}>
-        <div className="container">
-          <div className={styles.statsGrid}>
-            <div className={styles.statItem}>
-              <div className={styles.statIcon}>
-                <TrendingUp size={24} />
-              </div>
-              <div className={styles.statValue}>{stats.totalItems || 0}</div>
-              <div className={styles.statLabel}>Товаров в каталоге</div>
+    {/* Статистика */}
+    <section className={styles.stats}>
+      <div className="container">
+        <div className={styles.statsGrid}>
+          <div className={styles.statItem}>
+            <div className={styles.statIcon}>
+              <TrendingUp size={24} />
             </div>
-            <div className={styles.statItem}>
-              <div className={styles.statIcon}>
-                <Users size={24} />
-              </div>
-              <div className={styles.statValue}>{stats.totalUsers || 0}</div>
-              <div className={styles.statLabel}>Активных пользователей</div>
+            <div className={styles.statValue}>{stats.totalItems || 0}</div>
+            <div className={styles.statLabel}>Товаров в каталоге</div>
+          </div>
+          <div className={styles.statItem}>
+            <div className={styles.statIcon}>
+              <Users size={24} />
             </div>
-            <div className={styles.statItem}>
-              <div className={styles.statIcon}>
-                <Shield size={24} />
-              </div>
-              <div className={styles.statValue}>{stats.totalContracts || 0}</div>
-              <div className={styles.statLabel}>Выполненных контрактов</div>
+            <div className={styles.statValue}>{stats.totalUsers || 0}</div>
+            <div className={styles.statLabel}>Активных пользователей</div>
+          </div>
+          <div className={styles.statItem}>
+            <div className={styles.statIcon}>
+              <Shield size={24} />
             </div>
-            <div className={styles.statItem}>
-              <div className={styles.statIcon}>
-                <Star size={24} />
-              </div>
-              <div className={styles.statValue}>{stats.averageRating || 4.8}</div>
-              <div className={styles.statLabel}>Средний рейтинг</div>
+            <div className={styles.statValue}>{stats.totalContracts || 0}</div>
+            <div className={styles.statLabel}>Выполненных контрактов</div>
+          </div>
+          <div className={styles.statItem}>
+            <div className={styles.statIcon}>
+              <Star size={24} />
             </div>
+            <div className={styles.statValue}>
+              {stats.averageRating ? stats.averageRating.toFixed(1) : '0.0'}
+            </div>
+            <div className={styles.statLabel}>Средний рейтинг</div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Преимущества */}
       <section className={styles.features}>

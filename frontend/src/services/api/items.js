@@ -112,9 +112,9 @@ export const itemsAPI = {
     return apiRequest.get('/v1/categories')
   },
 
-  // Получение статистикиhttp://localhost:8000/api/v1/analytics/items/popular
+  // Получение статистики
   getStats: () => {
-    return apiRequest.get('/v1/analytics/items/popular')
+    return apiRequest.get('/v1/items/stats')
   },
 
   // Добавление в избранное

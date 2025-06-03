@@ -21,6 +21,8 @@ from app.models.user import User
 from app.schemas.item import (
     ItemCreate, ItemUpdate, ItemSearch, ReviewCreate, RentalRequest
 )
+from app.models.user import User, UserStatus
+from app.models.contract import Contract, ContractStatus
 from app.schemas.common import PaginatedResponse, PaginationMeta
 from app.core.config import settings
 from app.utils.exceptions import NotFoundError, ForbiddenError, BadRequestError
@@ -451,15 +453,55 @@ class ItemService:
             Item.is_featured == True
         ).limit(limit).all()
     
-    def get_all_items(
-        self, 
-        page: int = 1, 
-        size: int = 20
-    ) -> PaginatedResponse:
+    def get_platform_stats(self) -> Dict[str, Any]:
         """
-        Get all items with pagination.
+        Get platform statistics without authorization.
+        
+        Returns:
+            Dict with platform statistics
         """
-        return self.get_items(ItemSearch(), page, size)
+        try:
+            # Количество зарегистрированных пользователей
+            total_users = self.db.query(User).filter(
+                User.status == UserStatus.ACTIVE
+            ).count()
+            
+            # Количество активных товаров
+            total_items = self.db.query(Item).filter(
+                Item.status == ItemStatus.ACTIVE,
+                Item.is_approved == True
+            ).count()
+            
+            # Количество выполненных контрактов
+            completed_contracts = self.db.query(Contract).filter(
+                Contract.status == ContractStatus.COMPLETED
+            ).count()
+            
+            # Средний рейтинг товаров
+            avg_rating_result = self.db.query(func.avg(Item.rating)).filter(
+                Item.status == ItemStatus.ACTIVE,
+                Item.is_approved == True,
+                Item.rating.isnot(None)
+            ).scalar()
+            
+            average_rating = float(avg_rating_result) if avg_rating_result else 0.0
+            
+            return {
+                "total_users": total_users,
+                "total_items": total_items,
+                "completed_contracts": completed_contracts,
+                "average_rating": round(average_rating, 2)
+            }
+            
+        except SQLAlchemyError as e:
+            logger.error(f"Error getting platform stats: {e}")
+            # Возвращаем нулевые значения в случае ошибки
+            return {
+                "total_users": 0,
+                "total_items": 0,
+                "completed_contracts": 0,
+                "average_rating": 0.0
+            }
     
     def get_similar_items(self, item_id: uuid.UUID, limit: int = 4) -> List[Item]:
         """

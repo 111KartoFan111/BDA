@@ -4,7 +4,7 @@
 Items endpoints.
 """
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -63,17 +63,18 @@ async def get_items(
     result = item_service.get_items(search_params, current_user)
     return result
 
-@router.get("/all", response_model=PaginatedResponse[Item])
-async def get_all_items(
-    page: int = Query(1, ge=1, description="Page number"),
-    size: int = Query(20, ge=1, le=100, description="Page size"),
+@router.get("/stats", response_model=Response[Dict[str, Any]])
+async def get_platform_stats(
     item_service: ItemService = Depends(get_item_service)
 ) -> Any:
     """
-    Get all items with pagination.
+    Get platform statistics.
+    
+    ПУБЛИЧНЫЙ ЭНДПОИНТ - работает без авторизации
+    Возвращает общую статистику платформы
     """
-    return item_service.get_all_items(page, size)
-
+    stats = item_service.get_platform_stats()
+    return Response(data=stats)
 
 @router.get("/featured", response_model=Response[List[Item]])
 async def get_featured_items(
