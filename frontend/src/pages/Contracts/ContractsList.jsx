@@ -199,7 +199,7 @@ const ContractsList = () => {
   const statusOptions = [
     { value: '', label: 'Все статусы' },
     { value: CONTRACT_STATUS.PENDING, label: 'Ожидает подписания' },
-    { value: CONTRACT_STATUS.ACTIVE, label: 'Активные' },
+    { value: CONTRACT_STATUS.SIGNED, label: 'Подписанные' },
     { value: CONTRACT_STATUS.COMPLETED, label: 'Завершенные' },
     { value: CONTRACT_STATUS.CANCELLED, label: 'Отмененные' },
     { value: CONTRACT_STATUS.DISPUTED, label: 'Спорные' }
