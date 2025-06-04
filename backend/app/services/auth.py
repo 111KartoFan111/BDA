@@ -1,5 +1,8 @@
+# backend/app/services/auth.py - ИСПРАВЛЕНО для использования Celery
+
 """
 Authentication service for user management.
+ИСПРАВЛЕНО: Добавлено использование Celery для отправки email
 """
 
 from typing import Optional, Dict, Any
@@ -7,6 +10,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
 import uuid
+import logging
 
 from app.core.security import (
     verify_password, get_password_hash, create_access_token, 
@@ -16,8 +20,9 @@ from app.core.security import (
 )
 from app.models.user import User, UserStatus, UserRole
 from app.schemas.user import UserCreate, UserUpdate, UserLogin
-from app.services.email import EmailService
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -25,7 +30,6 @@ class AuthService:
     
     def __init__(self, db: Session):
         self.db = db
-        self.email_service = EmailService()
     
     def authenticate_user(self, email: str, password: str) -> Optional[User]:
         """
@@ -106,8 +110,18 @@ class AuthService:
         self.db.commit()
         self.db.refresh(user)
         
-        # Send email verification
-        self.send_email_verification(user.email)
+        # Send email verification using Celery
+        try:
+            self.send_email_verification(user.email)
+        except Exception as e:
+            logger.error(f"Failed to send verification email: {e}")
+            # Не прерываем регистрацию из-за проблем с email
+        
+        # Send welcome email using Celery
+        try:
+            self.send_welcome_email(user.email, f"{user.first_name} {user.last_name}")
+        except Exception as e:
+            logger.error(f"Failed to send welcome email: {e}")
         
         return user
     
@@ -254,7 +268,21 @@ class AuthService:
         user = self.get_user_by_email(email)
         if user and user.status == UserStatus.ACTIVE:
             token = generate_password_reset_token(email)
-            self.email_service.send_password_reset_email(email, token)
+            
+            try:
+                # Используем Celery для отправки email
+                from app.tasks import send_password_reset_async
+                task = send_password_reset_async(email, token)
+                logger.info(f"Password reset email task queued: {task.id}")
+            except Exception as e:
+                logger.error(f"Failed to queue password reset email: {e}")
+                # Fallback - отправляем синхронно
+                try:
+                    from app.services.email import EmailService
+                    email_service = EmailService()
+                    email_service.send_password_reset_email(email, token)
+                except Exception as e2:
+                    logger.error(f"Failed to send password reset email synchronously: {e2}")
         
         # Always return True for security (don't reveal if email exists)
         return True
@@ -314,9 +342,55 @@ class AuthService:
             )
         
         token = generate_email_verification_token(email)
-        self.email_service.send_email_verification(email, token)
+        
+        try:
+            # Используем Celery для отправки email
+            from app.tasks import send_email_verification_async
+            task = send_email_verification_async(email, token)
+            logger.info(f"Email verification task queued: {task.id}")
+        except Exception as e:
+            logger.error(f"Failed to queue email verification: {e}")
+            # Fallback - отправляем синхронно
+            try:
+                from app.services.email import EmailService
+                email_service = EmailService()
+                email_service.send_email_verification(email, token)
+            except Exception as e2:
+                logger.error(f"Failed to send email verification synchronously: {e2}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to send verification email"
+                )
         
         return True
+    
+    def send_welcome_email(self, email: str, user_name: str) -> bool:
+        """
+        Send welcome email.
+        
+        Args:
+            email: User email
+            user_name: User name
+            
+        Returns:
+            True if email sent
+        """
+        try:
+            # Используем Celery для отправки email
+            from app.tasks import send_welcome_email_async
+            task = send_welcome_email_async(email, user_name)
+            logger.info(f"Welcome email task queued: {task.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to queue welcome email: {e}")
+            # Fallback - отправляем синхронно
+            try:
+                from app.services.email import EmailService
+                email_service = EmailService()
+                return email_service.send_welcome_email(email, user_name)
+            except Exception as e2:
+                logger.error(f"Failed to send welcome email synchronously: {e2}")
+                return False
     
     def verify_email(self, token: str) -> bool:
         """
