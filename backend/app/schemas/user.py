@@ -51,6 +51,7 @@ class UserUpdate(BaseModel):
     bio: Optional[str] = None
     location: Optional[str] = None
     website: Optional[str] = None
+    wallet_address: Optional[str] = None  # НОВОЕ ПОЛЕ
     
     @field_validator('first_name', 'last_name')
     @classmethod
@@ -58,6 +59,15 @@ class UserUpdate(BaseModel):
         if v is not None and len(v.strip()) < 2:
             raise ValueError('Name must be at least 2 characters long')
         return v.strip() if v else None
+
+    @field_validator('wallet_address')
+    @classmethod
+    def validate_wallet_address(cls, v):
+        if v is not None:
+            import re
+            if not re.match(r'^0x[a-fA-F0-9]{40}$', v):
+                raise ValueError('Invalid Ethereum wallet address format')
+        return v
 
 
 class UserInDB(UserBase):
@@ -70,7 +80,7 @@ class UserInDB(UserBase):
     is_email_verified: bool
     is_phone_verified: bool
     is_verified: bool
-    wallet_address: Optional[str] = None
+    wallet_address: Optional[str] = None  # НОВОЕ ПОЛЕ
     avatar: Optional[str] = None
     rating: Optional[float] = None
     total_reviews: int = 0
@@ -93,7 +103,6 @@ class UserProfile(User):
     active_contracts: Optional[int] = 0
     followers_count: Optional[int] = 0
     following_count: Optional[int] = 0
-
 
 class UserLogin(BaseModel):
     """User login schema."""

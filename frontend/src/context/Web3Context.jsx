@@ -1,6 +1,9 @@
+// frontend/src/context/Web3Context.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import Web3 from 'web3'
 import web3Service from '../services/blockchain/web3'
+import { walletAPI } from '../services/api/wallet'
+import { useAuth } from './AuthContext'
 import toast from 'react-hot-toast'
 
 const Web3Context = createContext()
@@ -106,7 +109,7 @@ function web3Reducer(state, action) {
 // Получение названия сети по chainId
 const getNetworkName = (chainId) => {
   const networks = {
-    1: 'Sepolia Testnet',
+    1: 'Ethereum Mainnet',
     11155111: 'Sepolia Testnet',
     137: 'Polygon Mainnet',
     56: 'BSC Mainnet',
@@ -117,11 +120,12 @@ const getNetworkName = (chainId) => {
 
 export function Web3Provider({ children }) {
   const [state, dispatch] = useReducer(web3Reducer, initialState)
+  const { user, isAuthenticated } = useAuth()
 
   // Проверка подключения к MetaMask при загрузке
   useEffect(() => {
     const checkConnection = async () => {
-      if (typeof window.ethereum !== 'undefined') {
+      if (typeof window.ethereum !== 'undefined' && isAuthenticated) {
         try {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' })
           if (accounts.length > 0) {
@@ -134,17 +138,23 @@ export function Web3Provider({ children }) {
     }
 
     checkConnection()
-  }, [])
+  }, [isAuthenticated])
 
   // Слушатели событий MetaMask
   useEffect(() => {
     if (typeof window.ethereum !== 'undefined') {
-      const handleAccountsChanged = (accounts) => {
+      const handleAccountsChanged = async (accounts) => {
         if (accounts.length === 0) {
-          disconnect()
+          await disconnect()
         } else {
-          dispatch({ type: web3Actions.SET_ACCOUNT, payload: accounts[0] })
-          updateBalance(accounts[0])
+          const newAccount = accounts[0]
+          dispatch({ type: web3Actions.SET_ACCOUNT, payload: newAccount })
+          updateBalance(newAccount)
+          
+          // НОВОЕ: Сохраняем новый адрес кошелька в БД
+          if (isAuthenticated && newAccount) {
+            await saveWalletToDatabase(newAccount)
+          }
         }
       }
 
@@ -175,12 +185,43 @@ export function Web3Provider({ children }) {
         }
       }
     }
-  }, [state.account])
+  }, [state.account, isAuthenticated])
+
+  // НОВАЯ ФУНКЦИЯ: Сохранение адреса кошелька в БД
+  const saveWalletToDatabase = async (walletAddress) => {
+    if (!isAuthenticated || !walletAddress) {
+      return
+    }
+
+    try {
+      const response = await walletAPI.connectWallet(walletAddress)
+      console.log('Wallet saved to database:', response.data)
+      
+      // Показываем уведомление только при первом подключении
+      if (response.data?.message) {
+        toast.success('Кошелек подключен к аккаунту')
+      }
+    } catch (error) {
+      console.error('Failed to save wallet to database:', error)
+      
+      // Показываем ошибку только если это не дублирование
+      if (error.response?.status !== 400) {
+        toast.error('Не удалось сохранить кошелек в аккаунте, попробуйте другой кошелек')
+      }
+    }
+  }
 
   // Подключение кошелька
   const connectWallet = async () => {
     if (typeof window.ethereum === 'undefined') {
       const error = 'MetaMask не установлен. Пожалуйста, установите MetaMask для работы с блокчейном.'
+      dispatch({ type: web3Actions.SET_ERROR, payload: error })
+      toast.error(error)
+      return { success: false, error }
+    }
+
+    if (!isAuthenticated) {
+      const error = 'Необходимо войти в аккаунт для подключения кошелька'
       dispatch({ type: web3Actions.SET_ERROR, payload: error })
       toast.error(error)
       return { success: false, error }
@@ -234,13 +275,18 @@ export function Web3Provider({ children }) {
         }
       }
 
+      const walletAddress = accounts[0]
+
       dispatch({ type: web3Actions.SET_WEB3, payload: web3Instance })
-      dispatch({ type: web3Actions.SET_ACCOUNT, payload: accounts[0] })
+      dispatch({ type: web3Actions.SET_ACCOUNT, payload: walletAddress })
       dispatch({ type: web3Actions.SET_CHAIN_ID, payload: chainId })
       dispatch({ type: web3Actions.SET_CONNECTED, payload: true })
 
       // Получение баланса
-      await updateBalance(accounts[0], web3Instance)
+      await updateBalance(walletAddress, web3Instance)
+
+      // НОВОЕ: Сохраняем адрес кошелька в БД
+      await saveWalletToDatabase(walletAddress)
 
       // Инициализация контрактов (если chainId поддерживается)
       if (chainId === expectedChainId) {
@@ -251,6 +297,7 @@ export function Web3Provider({ children }) {
           // Не показываем ошибку пользователю, просто логируем
         }
       }
+
     } catch (error) {
       const errorMessage = error.message || 'Ошибка подключения кошелька'
       dispatch({ type: web3Actions.SET_ERROR, payload: errorMessage })
@@ -260,7 +307,17 @@ export function Web3Provider({ children }) {
   }
 
   // Отключение кошелька
-  const disconnect = () => {
+  const disconnect = async () => {
+    try {
+      // НОВОЕ: Отключаем кошелек в БД
+      if (isAuthenticated && state.account) {
+        await walletAPI.disconnectWallet()
+      }
+    } catch (error) {
+      console.error('Failed to disconnect wallet from database:', error)
+      // Продолжаем отключение даже если запрос в БД не удался
+    }
+
     dispatch({ type: web3Actions.DISCONNECT })
     toast.info('Кошелёк отключен')
   }
@@ -397,6 +454,44 @@ export function Web3Provider({ children }) {
     return state.chainId === 11155111 // Sepolia
   }
 
+  // НОВЫЕ ФУНКЦИИ для работы с кошельком в БД
+  const getWalletInfo = async () => {
+    if (!isAuthenticated) return null
+
+    try {
+      const response = await walletAPI.getWalletInfo()
+      return response.data.data
+    } catch (error) {
+      console.error('Failed to get wallet info:', error)
+      return null
+    }
+  }
+
+  const verifyWalletOwnership = async (signature) => {
+    if (!isAuthenticated || !state.account) return false
+
+    try {
+      const response = await walletAPI.verifyWalletOwnership(signature)
+      return response.data.data.verified
+    } catch (error) {
+      console.error('Failed to verify wallet ownership:', error)
+      return false
+    }
+  }
+
+  // Синхронизация состояния с БД при входе пользователя
+  useEffect(() => {
+    const syncWalletWithDatabase = async () => {
+      if (isAuthenticated && user?.wallet_address && !state.account) {
+        // Если в БД есть адрес кошелька, но кошелек не подключен в web3
+        // Можно показать уведомление или попытаться переподключиться
+        console.log('User has wallet in database but not connected to web3:', user.wallet_address)
+      }
+    }
+
+    syncWalletWithDatabase()
+  }, [isAuthenticated, user, state.account])
+
   const value = {
     ...state,
     connectWallet,
@@ -408,7 +503,11 @@ export function Web3Provider({ children }) {
     addNetwork,
     clearError,
     getFormattedBalance,
-    isSupportedNetwork
+    isSupportedNetwork,
+    // Новые функции
+    getWalletInfo,
+    verifyWalletOwnership,
+    saveWalletToDatabase
   }
 
   return (

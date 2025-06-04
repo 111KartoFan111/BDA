@@ -133,6 +133,7 @@ async def update_user_profile(
 ) -> Any:
     """
     Update user profile.
+    ОБНОВЛЕНО: Добавлена поддержка wallet_address
     
     Args:
         profile_data: Profile update data
@@ -143,13 +144,31 @@ async def update_user_profile(
         Response with updated user data
     """
     from app.schemas.user import UserUpdate
+    
+    # Валидация wallet_address если он присутствует
+    if 'wallet_address' in profile_data and profile_data['wallet_address']:
+        import re
+        wallet_address = profile_data['wallet_address']
+        if not re.match(r'^0x[a-fA-F0-9]{40}$', wallet_address):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Ethereum wallet address format"
+            )
+        
+        # Проверяем, что адрес не используется другим пользователем
+        existing_user = auth_service.get_user_by_wallet_address(wallet_address)
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This wallet address is already used by another user"
+            )
+    
     update_data = UserUpdate(**profile_data)
     updated_user = auth_service.update_user(current_user.id, update_data)
     return Response(
         data=updated_user,
         message="Profile updated successfully"
     )
-
 
 @router.patch("/change-password", response_model=Response[None])
 async def change_user_password(
