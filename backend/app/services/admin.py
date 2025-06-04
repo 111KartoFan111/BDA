@@ -598,7 +598,7 @@ class AdminService:
         completed_contracts = self.db.query(Contract).filter(
             Contract.completed_at >= start_date,
             Contract.completed_at <= end_date,
-            Contract.status == ContractStatus.COMPLETED
+            Contract.status == ContractStatus.SIGNED
         ).count()
         
         return {

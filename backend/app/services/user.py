@@ -180,13 +180,13 @@ class UserService:
         
         completed_contracts = self.db.query(Contract).filter(
             or_(Contract.tenant_id == user_id, Contract.owner_id == user_id),
-            Contract.status == ContractStatus.COMPLETED
+            Contract.status == ContractStatus.SIGNED
         ).count()
         
         # Calculate earnings (as owner)
         earnings_result = self.db.query(func.sum(Contract.total_price)).filter(
             Contract.owner_id == user_id,
-            Contract.status == ContractStatus.COMPLETED
+            Contract.status == ContractStatus.SIGNED
         ).scalar()
         
         total_earnings = float(earnings_result) if earnings_result else 0.0

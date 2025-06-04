@@ -455,6 +455,9 @@
   color: #f9fafb;
 }
 
+[data-theme="dark"] .avatar {
+  color: #f9fafb;
+}
 [data-theme="dark"] .mobileNavLink:hover,
 [data-theme="dark"] .mobileNavLink.active {
   background-color: rgba(59, 130, 246, 0.1);

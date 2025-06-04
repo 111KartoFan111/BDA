@@ -195,7 +195,7 @@ const Profile = () => {
     },
     { 
       label: 'На платформе с', 
-      value: user?.createdAt ? formatDate(user.createdAt, 'MMMM yyyy') : '',
+      value: user?.created_at ? formatDate(user.created_at, 'MMMM yyyy') : '',
       icon: <Calendar size={20} />,
       color: '#6b7280'
     }
@@ -211,7 +211,7 @@ const Profile = () => {
               <div className={styles.avatarSection}>
                 <div className={styles.avatar}>
                   {user?.avatar ? (
-                    <img src={user.avatar} alt={user.firstName} />
+                    <img src={user.avatar} alt={user.first_name} />
                   ) : (
                     <User size={40} />
                   )}
@@ -225,7 +225,7 @@ const Profile = () => {
                 
                 <div className={styles.userInfo}>
                   <h1 className={styles.userName}>
-                    {user?.firstName} {user?.lastName}
+                    {user?.first_name} {user?.last_name}
                   </h1>
                   <p className={styles.userRole}>
                     {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
@@ -351,7 +351,7 @@ const Profile = () => {
                   )}
                   <div className={styles.infoItem}>
                     <Calendar size={16} />
-                    <span>Регистрация: {formatDate(user?.createdAt)}</span>
+                    <span>Регистрация: {formatDate(user?.created_at)}</span>
                   </div>
                 </div>
               </div>
@@ -419,8 +419,8 @@ const Profile = () => {
                       {stat.icon}
                     </div>
                     <div className={styles.statContent}>
-                      <div className={styles.statValue}>{stat.value}</div>
                       <div className={styles.statLabel}>{stat.label}</div>
+                      <div className={styles.statValue}>{stat.value}</div>
                       {stat.subtitle && (
                         <div className={styles.statSubtitle}>{stat.subtitle}</div>
                       )}

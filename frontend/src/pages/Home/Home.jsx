@@ -29,7 +29,6 @@ const Home = () => {
         
         // Загрузка статистики
         const statsResponse = await itemsAPI.getStats()
-        console.log('Stats response:', statsResponse) // Для отладки
         
         if (statsResponse.data && statsResponse.data.data) {
           const statsData = statsResponse.data.data

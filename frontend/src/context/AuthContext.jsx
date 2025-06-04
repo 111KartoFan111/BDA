@@ -137,9 +137,6 @@ export function AuthProvider({ children }) {
           token: access_token 
         }
       })
-
-      toast.success(`Добро пожаловать, ${user.first_name || user.email}!`)
-      return { success: true }
     } catch (error) {
       console.error('Login error:', error)
       const errorMessage = error.response?.data?.message || 

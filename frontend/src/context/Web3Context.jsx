@@ -251,9 +251,6 @@ export function Web3Provider({ children }) {
           // Не показываем ошибку пользователю, просто логируем
         }
       }
-
-      toast.success(`Кошелёк подключен! Сеть: ${getNetworkName(chainId)}`)
-      return { success: true }
     } catch (error) {
       const errorMessage = error.message || 'Ошибка подключения кошелька'
       dispatch({ type: web3Actions.SET_ERROR, payload: errorMessage })
